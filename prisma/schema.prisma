@@ -1,0 +1,357 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  saves     Save[]
+  auditLogs EditAuditLog[]
+
+  @@map("users")
+}
+
+model Save {
+  id           String    @id @default(uuid())
+  userId       String    @map("user_id")
+  name         String
+  fmVersion    String    @map("fm_version")
+  managerName  String?   @map("manager_name")
+  startingClub String?   @map("starting_club")
+  currentClub  String?   @map("current_club")
+  country      String?
+  startDate    DateTime? @map("start_date")
+  philosophy   Json?
+  notes        String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  user            User              @relation(fields: [userId], references: [id])
+  seasons         Season[]
+  players         Player[]
+  recommendations Recommendation[]
+  actionItems     ActionItem[]
+
+  @@map("saves")
+}
+
+model Season {
+  id                      String   @id @default(uuid())
+  saveId                  String   @map("save_id")
+  seasonLabel             String   @map("season_label")
+  leagueName              String   @map("league_name")
+  divisionLevel           Int?     @map("division_level")
+  clubName                String   @map("club_name")
+  status                  String   @default("active")
+  outcome                 String?
+  promotedRelegatedStayed String?  @map("promoted_relegated_stayed")
+  boardExpectation        String?  @map("board_expectation")
+  transferBudget          Float?   @map("transfer_budget")
+  wageBudget              Float?   @map("wage_budget")
+  seasonObjective         String?  @map("season_objective")
+  tacticNotes             String?  @map("tactic_notes")
+  recruitmentPriorities   String?  @map("recruitment_priorities")
+  notes                   String?
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  save            Save             @relation(fields: [saveId], references: [id], onDelete: Cascade)
+  checkpoints     Checkpoint[]
+  recommendations Recommendation[]
+  actionItems     ActionItem[]
+
+  @@map("seasons")
+}
+
+model Checkpoint {
+  id                   String    @id @default(uuid())
+  seasonId             String    @map("season_id")
+  checkpointType       String    @map("checkpoint_type")
+  gamesPlayed          Int?      @map("games_played")
+  inGameDate           DateTime? @map("in_game_date")
+  calendarPhase        String?   @map("calendar_phase")
+  transferWindowStatus String?   @map("transfer_window_status")
+  status               String    @default("draft")
+  notes                String?
+  confirmedAt          DateTime? @map("confirmed_at")
+  lockedAt             DateTime? @map("locked_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  aiDebrief            String?   @map("ai_debrief")
+
+  season               Season                @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  screenshots          Screenshot[]
+  leagueTableSnapshots LeagueTableSnapshot[]
+  teamStats            TeamCheckpointStats?
+  playerStats          PlayerCheckpointStats[]
+  tacticSnapshot       TacticSnapshot?
+  medicalSnapshot      MedicalSnapshot?
+  financeSnapshot      FinanceSnapshot?
+  recommendations      Recommendation[]
+  actionItems          ActionItem[]
+
+  @@map("checkpoints")
+}
+
+model Screenshot {
+  id               String   @id @default(uuid())
+  checkpointId     String   @map("checkpoint_id")
+  fileUrl          String   @map("file_url")
+  storagePath      String   @map("storage_path")
+  originalFilename String   @map("original_filename")
+  screenshotType   String?  @map("screenshot_type")
+  uploadOrder      Int?     @map("upload_order")
+  processingStatus String   @default("uploaded") @map("processing_status")
+  confidence       Float?
+  metadata         Json?
+  fileSize         Int?     @map("file_size")
+  mimeType         String?  @map("mime_type")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  checkpoint Checkpoint @relation(fields: [checkpointId], references: [id], onDelete: Cascade)
+
+  @@map("screenshots")
+}
+
+model LeagueTableSnapshot {
+  id           String   @id @default(uuid())
+  checkpointId String   @map("checkpoint_id")
+  teamName     String   @map("team_name")
+  position     Int
+  played       Int
+  wins         Int
+  draws        Int
+  losses       Int
+  goalsFor     Int      @map("goals_for")
+  goalsAgainst Int      @map("goals_against")
+  goalDiff     Int      @map("goal_difference")
+  points       Int
+  form         String?
+  isYourTeam   Boolean  @default(false) @map("is_your_team")
+  confirmed    Boolean  @default(false)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  checkpoint Checkpoint @relation(fields: [checkpointId], references: [id], onDelete: Cascade)
+
+  @@map("league_table_snapshots")
+}
+
+model TeamCheckpointStats {
+  id                     String   @id @default(uuid())
+  checkpointId           String   @unique @map("checkpoint_id")
+  leaguePosition         Int?     @map("league_position")
+  played                 Int?
+  points                 Int?
+  wins                   Int?
+  draws                  Int?
+  losses                 Int?
+  goalsFor               Int?     @map("goals_for")
+  goalsAgainst           Int?     @map("goals_against")
+  goalDiff               Int?     @map("goal_difference")
+  xg                     Float?
+  xga                    Float?
+  cleanSheets            Int?     @map("clean_sheets")
+  clearCutChancesFor     Int?     @map("clear_cut_chances_for")
+  clearCutChancesAgainst Int?     @map("clear_cut_chances_against")
+  shotsPerGame           Float?   @map("shots_per_game")
+  possession             Float?
+  passCompletion         Float?   @map("pass_completion")
+  setPieceGoalsFor       Int?     @map("set_piece_goals_for")
+  setPieceGoalsAgainst   Int?     @map("set_piece_goals_against")
+  crossAssistsFor        Int?     @map("cross_assists_for")
+  crossAssistsAgainst    Int?     @map("cross_assists_against")
+  notes                  String?
+  confirmed              Boolean  @default(false)
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  checkpoint Checkpoint @relation(fields: [checkpointId], references: [id], onDelete: Cascade)
+
+  @@map("team_checkpoint_stats")
+}
+
+model Player {
+  id          String    @id @default(uuid())
+  saveId      String    @map("save_id")
+  name        String
+  nationality String?
+  position    String?
+  dateOfBirth DateTime? @map("date_of_birth")
+  notes       String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  save            Save                    @relation(fields: [saveId], references: [id], onDelete: Cascade)
+  checkpointStats PlayerCheckpointStats[]
+
+  @@map("players")
+}
+
+model PlayerCheckpointStats {
+  id             String    @id @default(uuid())
+  checkpointId   String    @map("checkpoint_id")
+  playerId       String    @map("player_id")
+  age            Int?
+  position       String?
+  appearances    Int?
+  starts         Int?
+  subAppearances Int?      @map("sub_appearances")
+  goals          Int?
+  assists        Int?
+  cleanSheets    Int?      @map("clean_sheets")
+  avgRating      Float?    @map("avg_rating")
+  minutes        Int?
+  yellowCards    Int?      @map("yellow_cards")
+  redCards       Int?      @map("red_cards")
+  valueMin       Float?    @map("value_min")
+  valueMax       Float?    @map("value_max")
+  wage           Float?
+  contractExpiry DateTime? @map("contract_expiry")
+  morale         String?
+  fitness        Int?
+  sharpness      Int?
+  injuryStatus   String?   @map("injury_status")
+  confirmed      Boolean   @default(false)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  checkpoint Checkpoint @relation(fields: [checkpointId], references: [id], onDelete: Cascade)
+  player     Player     @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@map("player_checkpoint_stats")
+}
+
+model TacticSnapshot {
+  id                          String   @id @default(uuid())
+  checkpointId                String   @unique @map("checkpoint_id")
+  formation                   String?
+  mentality                   String?
+  inPossessionInstructions    Json?    @map("in_possession_instructions")
+  inTransitionInstructions    Json?    @map("in_transition_instructions")
+  outOfPossessionInstructions Json?    @map("out_of_possession_instructions")
+  roles                       Json?
+  playerInstructions          Json?    @map("player_instructions")
+  notes                       String?
+  aiAnalysis                  String?  @map("ai_analysis")
+  confirmed                   Boolean  @default(false)
+  createdAt                   DateTime @default(now()) @map("created_at")
+  updatedAt                   DateTime @updatedAt @map("updated_at")
+
+  checkpoint Checkpoint @relation(fields: [checkpointId], references: [id], onDelete: Cascade)
+
+  @@map("tactic_snapshots")
+}
+
+model MedicalSnapshot {
+  id                      String   @id @default(uuid())
+  checkpointId            String   @unique @map("checkpoint_id")
+  totalInjuriesThisSeason Int?     @map("total_injuries_this_season")
+  currentInjuries         Int?     @map("current_injuries")
+  playersHighRisk         Json?    @map("players_high_risk")
+  playersFatigued         Json?    @map("players_fatigued")
+  overallSquadCondition   String?  @map("overall_squad_condition")
+  notes                   String?
+  confirmed               Boolean  @default(false)
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  checkpoint Checkpoint @relation(fields: [checkpointId], references: [id], onDelete: Cascade)
+
+  @@map("medical_snapshots")
+}
+
+model FinanceSnapshot {
+  id                  String   @id @default(uuid())
+  checkpointId        String   @unique @map("checkpoint_id")
+  balance             Float?
+  profitLoss          Float?   @map("profit_loss")
+  transferBudget      Float?   @map("transfer_budget")
+  wageBudget          Float?   @map("wage_budget")
+  wageSpend           Float?   @map("wage_spend")
+  remainingWageBudget Float?   @map("remaining_wage_budget")
+  debt                Float?
+  projections         Json?
+  income              Json?
+  expenses            Json?
+  facilities          Json?
+  notes               String?
+  confirmed           Boolean  @default(false)
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  checkpoint Checkpoint @relation(fields: [checkpointId], references: [id], onDelete: Cascade)
+
+  @@map("finance_snapshots")
+}
+
+model Recommendation {
+  id              String    @id @default(uuid())
+  saveId          String    @map("save_id")
+  seasonId        String?   @map("season_id")
+  checkpointId    String?   @map("checkpoint_id")
+  type            String
+  title           String
+  priority        String    @default("medium")
+  confidence      String    @default("low")
+  summary         String?
+  reasoning       String?
+  evidence        Json?
+  suggestedAction String?   @map("suggested_action")
+  status          String    @default("new")
+  dueDate         DateTime? @map("due_date")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  save       Save        @relation(fields: [saveId], references: [id], onDelete: Cascade)
+  season     Season?     @relation(fields: [seasonId], references: [id])
+  checkpoint Checkpoint? @relation(fields: [checkpointId], references: [id])
+  actionItems ActionItem[]
+
+  @@map("recommendations")
+}
+
+model ActionItem {
+  id               String    @id @default(uuid())
+  saveId           String    @map("save_id")
+  seasonId         String?   @map("season_id")
+  checkpointId     String?   @map("checkpoint_id")
+  recommendationId String?   @map("recommendation_id")
+  title            String
+  description      String?
+  status           String    @default("todo")
+  dueDate          DateTime? @map("due_date")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  save           Save            @relation(fields: [saveId], references: [id], onDelete: Cascade)
+  season         Season?         @relation(fields: [seasonId], references: [id])
+  checkpoint     Checkpoint?     @relation(fields: [checkpointId], references: [id])
+  recommendation Recommendation? @relation(fields: [recommendationId], references: [id])
+
+  @@map("action_items")
+}
+
+model EditAuditLog {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  fieldName  String   @map("field_name")
+  oldValue   String?  @map("old_value")
+  newValue   String?  @map("new_value")
+  changedAt  DateTime @default(now()) @map("changed_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("edit_audit_logs")
+}
