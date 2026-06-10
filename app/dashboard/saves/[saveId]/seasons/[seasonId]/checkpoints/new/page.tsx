@@ -21,7 +21,7 @@ export default function NewCheckpointPage() {
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<Record<string, string>>({
     checkpointType: 'mid_season',
     notes: '',
   })

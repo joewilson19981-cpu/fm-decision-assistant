@@ -38,7 +38,7 @@ export default function TeamStatsPage() {
   const { saveId, seasonId, checkpointId } = params as Record<string, string>
   const base = `/dashboard/saves/${saveId}/seasons/${seasonId}/checkpoints/${checkpointId}`
 
-  const [form, setForm] = useState({ ...empty, notes: '' })
+  const [form, setForm] = useState<Record<string, string>>({ ...empty, notes: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 

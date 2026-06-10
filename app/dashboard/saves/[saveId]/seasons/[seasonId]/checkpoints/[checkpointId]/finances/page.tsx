@@ -20,7 +20,7 @@ export default function FinancesPage() {
   const { saveId, seasonId, checkpointId } = params as Record<string, string>
   const base = `/dashboard/saves/${saveId}/seasons/${seasonId}/checkpoints/${checkpointId}`
 
-  const [form, setForm] = useState(Object.fromEntries([...FIELDS.map(f => [f.key, '']), ['notes', '']]))
+  const [form, setForm] = useState<Record<string, string>>(Object.fromEntries([...FIELDS.map(f => [f.key, '']), ['notes', '']]))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 

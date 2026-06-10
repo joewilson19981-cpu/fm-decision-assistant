@@ -9,7 +9,7 @@ export default function NewSavePage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<Record<string, string>>({
     name: '',
     fmVersion: 'FM26',
     managerName: '',

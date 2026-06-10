@@ -12,7 +12,7 @@ export default function MedicalPage() {
   const { saveId, seasonId, checkpointId } = params as Record<string, string>
   const base = `/dashboard/saves/${saveId}/seasons/${seasonId}/checkpoints/${checkpointId}`
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<Record<string, string>>({
     totalInjuriesThisSeason: '',
     currentInjuries: '',
     overallSquadCondition: '',
