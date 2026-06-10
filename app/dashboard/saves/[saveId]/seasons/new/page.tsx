@@ -64,7 +64,7 @@ export default function NewSeasonPage() {
   })
 
   function update(field: string, value: string) {
-    setForm(f => ({ ...f, [field]: value }))
+    setForm((f: any) => ({ ...f, [field]: value }))
   }
 
   async function handleSubmit(e: React.FormEvent) {

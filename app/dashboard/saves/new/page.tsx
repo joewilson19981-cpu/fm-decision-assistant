@@ -27,11 +27,11 @@ export default function NewSavePage() {
   })
 
   function update(field: string, value: string) {
-    setForm(f => ({ ...f, [field]: value }))
+    setForm((f: any) => ({ ...f, [field]: value }))
   }
 
   function updatePhilosophy(field: string, value: string) {
-    setForm(f => ({ ...f, philosophy: { ...f.philosophy, [field]: value } }))
+    setForm((f: any) => ({ ...f, philosophy: { ...f.philosophy, [field]: value } }))
   }
 
   async function handleSubmit(e: React.FormEvent) {

@@ -47,12 +47,12 @@ export default function TeamStatsPage() {
     const gf = Number(form.goalsFor)
     const ga = Number(form.goalsAgainst)
     if (form.goalsFor !== '' && form.goalsAgainst !== '') {
-      setForm(f => ({ ...f, goalDiff: String(gf - ga) }))
+      setForm((f: any) => ({ ...f, goalDiff: String(gf - ga) }))
     }
   }, [form.goalsFor, form.goalsAgainst])
 
   function update(key: string, value: string) {
-    setForm(f => ({ ...f, [key]: value }))
+    setForm((f: any) => ({ ...f, [key]: value }))
   }
 
   async function handleSubmit(e: React.FormEvent) {

@@ -25,7 +25,7 @@ export default function FinancesPage() {
   const [error, setError] = useState('')
 
   function update(key: string, value: string) {
-    setForm(f => ({ ...f, [key]: value }))
+    setForm((f: any) => ({ ...f, [key]: value }))
   }
 
   async function handleSubmit(e: React.FormEvent) {
