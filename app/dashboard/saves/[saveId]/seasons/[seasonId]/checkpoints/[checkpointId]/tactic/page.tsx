@@ -12,7 +12,7 @@ export default function TacticPage() {
   const { saveId, seasonId, checkpointId } = params as Record<string, string>
   const base = `/dashboard/saves/${saveId}/seasons/${seasonId}/checkpoints/${checkpointId}`
 
-  const [form, setForm] = useState<Record<string, string>>({ formation: '', mentality: '', notes: '' })
+  const [form, setForm] = useState<any>({ formation: '', mentality: '', notes: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
