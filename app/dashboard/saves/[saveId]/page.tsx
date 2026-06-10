@@ -183,7 +183,7 @@ export default async function SaveDetailPage({ params }: { params: Promise<{ sav
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="font-semibold text-gray-900">{season.seasonLabel}</h3>
-                        <p className="text-sm text-gray-500 mt-0.5">{season.club}</p>
+                        <p className="text-sm text-gray-500 mt-0.5">{season.clubName}</p>
                       </div>
                       <span className={`text-xs px-3 py-1 rounded-full shrink-0 ${
                         season.status === 'active' ? 'bg-green-100 text-green-700' :
