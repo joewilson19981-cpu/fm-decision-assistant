@@ -226,20 +226,20 @@ export default function TransferAdvisorPage() {
     <div className="max-w-3xl">
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-          <Link href={`/dashboard/saves/${saveId}`} className="hover:text-gray-700">Save</Link>
+        <div className="flex items-center gap-2 text-sm text-zinc-500 mb-1">
+          <Link href={`/dashboard/saves/${saveId}`} className="hover:text-zinc-300">Save</Link>
           <span>/</span>
           <span>Transfer Advisor</span>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">💸 Transfer Advisor</h1>
-        <p className="text-gray-500 text-sm mt-1">
+        <h1 className="text-2xl font-bold text-white">💸 Transfer Advisor</h1>
+        <p className="text-zinc-500 text-sm mt-1">
           Upload transfer offer screenshots. The AI analyses the offer against your save context and advises whether to accept, reject, or negotiate.
         </p>
       </div>
 
       {/* Upload & Analyse */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
-        <h2 className="font-semibold text-gray-800 mb-3">New Transfer Offer</h2>
+      <div className="rounded-xl card-panel border border-white/[0.06] p-5 mb-6">
+        <h2 className="font-semibold text-white mb-3">New Transfer Offer</h2>
 
         {/* Drop zone */}
         <div
@@ -261,15 +261,15 @@ export default function TransferAdvisorPage() {
           {images.length === 0 ? (
             <div>
               <div className="text-4xl mb-2">📸</div>
-              <p className="text-sm font-semibold text-gray-700">Drop screenshots here or click to upload</p>
-              <p className="text-xs text-gray-400 mt-1">Transfer offer · Player profile · Club finances — upload as many as needed</p>
+              <p className="text-sm font-semibold text-zinc-300">Drop screenshots here or click to upload</p>
+              <p className="text-xs text-zinc-600 mt-1">Transfer offer · Player profile · Club finances — upload as many as needed</p>
             </div>
           ) : (
             <div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
                 {images.map((img, i) => (
                   <div key={i} className="relative group">
-                    <img src={img.preview} alt="" className="w-full h-28 object-cover rounded-lg border border-gray-200" />
+                    <img src={img.preview} alt="" className="w-full h-28 object-cover rounded-lg border border-white/[0.06]" />
                     <button
                       onClick={e => { e.stopPropagation(); removeImage(i) }}
                       className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -286,7 +286,7 @@ export default function TransferAdvisorPage() {
                 ))}
                 <button
                   onClick={e => { e.stopPropagation(); inputRef.current?.click() }}
-                  className="h-28 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-all text-xs"
+                  className="h-28 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-zinc-600 hover:border-blue-400 hover:text-blue-500 transition-all text-xs"
                 >
                   <span className="text-2xl">+</span>
                   <span>Add more</span>
@@ -300,11 +300,11 @@ export default function TransferAdvisorPage() {
           <div className="flex gap-3">
             <button
               onClick={handleAnalyze}
-              className="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+              className="bg-white text-black px-5 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
             >
               Analyse Offer
             </button>
-            <button onClick={reset} className="border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm hover:bg-gray-50">
+            <button onClick={reset} className="border border-white/10 text-zinc-400 px-4 py-2 rounded-lg text-sm hover:">
               Clear
             </button>
           </div>
@@ -329,7 +329,7 @@ export default function TransferAdvisorPage() {
       {analysis && status === 'done' && (
         <div className="space-y-4 mb-6">
           {/* Verdict hero */}
-          <div className={`rounded-xl border-2 p-5 ${VERDICT_STYLE[analysis.verdict] || 'bg-gray-100 border-gray-300 text-gray-800'}`}>
+          <div className={`rounded-xl border-2 p-5 ${VERDICT_STYLE[analysis.verdict] || ' border-white/10 text-white'}`}>
             <div className="flex items-start gap-4">
               <div className="text-5xl">{VERDICT_EMOJI[analysis.verdict]}</div>
               <div className="flex-1">
@@ -353,8 +353,8 @@ export default function TransferAdvisorPage() {
 
           {/* Key factors */}
           {analysis.keyFactors.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Key Factors</p>
+            <div className="rounded-xl card-panel border border-white/[0.06] p-4">
+              <p className="text-xs font-bold uppercase tracking-widest text-zinc-600 mb-3">Key Factors</p>
               <div className="space-y-2">
                 {analysis.keyFactors.map((kf, i) => (
                   <div key={i} className="flex items-start gap-2">
@@ -362,8 +362,8 @@ export default function TransferAdvisorPage() {
                       {kf.sentiment === 'positive' ? '✅' : kf.sentiment === 'negative' ? '❌' : '⚖️'}
                     </span>
                     <div>
-                      <span className="text-sm font-semibold text-gray-800">{kf.factor}: </span>
-                      <span className="text-sm text-gray-600">{kf.detail}</span>
+                      <span className="text-sm font-semibold text-white">{kf.factor}: </span>
+                      <span className="text-sm text-zinc-400">{kf.detail}</span>
                     </div>
                   </div>
                 ))}
@@ -391,49 +391,49 @@ export default function TransferAdvisorPage() {
 
           {/* Record Decision */}
           {!savedId ? (
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <h3 className="font-semibold text-gray-800 mb-3">Record Your Decision</h3>
+            <div className="rounded-xl card-panel border border-white/[0.06] p-5">
+              <h3 className="font-semibold text-white mb-3">Record Your Decision</h3>
               <div className="grid grid-cols-2 gap-4 mb-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Your decision</label>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1">Your decision</label>
                   <select
                     value={userDecision}
                     onChange={e => setUserDecision(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
                   >
                     {DECISION_OPTIONS.map(d => <option key={d} value={d}>{d}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Final fee (if sold)</label>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1">Final fee (if sold)</label>
                   <input
                     type="number"
                     value={finalFee}
                     onChange={e => setFinalFee(e.target.value)}
                     placeholder="e.g. 5000000"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
                   />
                 </div>
               </div>
               <div className="mb-4">
-                <label className="block text-xs font-medium text-gray-600 mb-1">Notes</label>
+                <label className="block text-xs font-medium text-zinc-400 mb-1">Notes</label>
                 <textarea
                   value={decisionNotes}
                   onChange={e => setDecisionNotes(e.target.value)}
                   rows={2}
                   placeholder="Why you made this decision..."
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
                 />
               </div>
               <div className="flex gap-3">
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                  className="bg-white text-black px-5 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
                 >
                   {saving ? 'Saving...' : 'Save to History'}
                 </button>
-                <button onClick={reset} className="border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm hover:bg-gray-50">
+                <button onClick={reset} className="border border-white/10 text-zinc-400 px-4 py-2 rounded-lg text-sm hover:">
                   Start New
                 </button>
               </div>
@@ -441,7 +441,7 @@ export default function TransferAdvisorPage() {
           ) : (
             <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center justify-between">
               <p className="text-sm text-green-700 font-medium">✅ Decision saved to history</p>
-              <button onClick={reset} className="text-sm text-blue-600 hover:underline">Analyse another offer →</button>
+              <button onClick={reset} className="text-sm text-white hover:opacity-70">Analyse another offer →</button>
             </div>
           )}
         </div>
@@ -449,13 +449,13 @@ export default function TransferAdvisorPage() {
 
       {/* History */}
       <div>
-        <h2 className="font-semibold text-gray-800 mb-3">Transfer History</h2>
+        <h2 className="font-semibold text-white mb-3">Transfer History</h2>
         {loadingHistory ? (
-          <p className="text-sm text-gray-400">Loading...</p>
+          <p className="text-sm text-zinc-600">Loading...</p>
         ) : history.length === 0 ? (
-          <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-8 text-center">
+          <div className=" border border-dashed border-white/10 rounded-xl p-8 text-center">
             <div className="text-3xl mb-2">📋</div>
-            <p className="text-sm text-gray-500">No transfer decisions recorded yet. Analyse your first offer above.</p>
+            <p className="text-sm text-zinc-500">No transfer decisions recorded yet. Analyse your first offer above.</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -463,16 +463,16 @@ export default function TransferAdvisorPage() {
               const isExpanded = expandedId === t.id
               const kf = t.aiKeyFactors as KeyFactor[] | null
               return (
-                <div key={t.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div key={t.id} className="rounded-xl card-panel border border-white/[0.06] overflow-hidden">
                   <div
-                    className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50"
+                    className="p-4 flex items-center justify-between cursor-pointer hover:"
                     onClick={() => setExpandedId(isExpanded ? null : t.id)}
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <span className="text-xl shrink-0">{VERDICT_EMOJI[t.aiVerdict || ''] || '❓'}</span>
                       <div className="min-w-0">
-                        <p className="font-semibold text-gray-900 truncate">{t.playerName}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="font-semibold text-white truncate">{t.playerName}</p>
+                        <p className="text-xs text-zinc-500 mt-0.5">
                           {t.buyingClub ? `${t.buyingClub} · ` : ''}
                           {formatFee(t.offerAmount, t.offerCurrency)}
                           {t.playerAge ? ` · Age ${t.playerAge}` : ''}
@@ -486,27 +486,27 @@ export default function TransferAdvisorPage() {
                           t.userDecision === 'Accepted' ? 'bg-green-100 text-green-700' :
                           t.userDecision === 'Rejected' ? 'bg-red-100 text-red-700' :
                           t.userDecision === 'Negotiated' ? 'bg-amber-100 text-amber-700' :
-                          'bg-gray-100 text-gray-600'
+                          ' text-zinc-400'
                         }`}>
                           {t.userDecision}
                         </span>
                       )}
-                      <span className="text-xs text-gray-400">{new Date(t.createdAt).toLocaleDateString('en-GB')}</span>
-                      <span className="text-gray-300 text-sm">{isExpanded ? '▲' : '▼'}</span>
+                      <span className="text-xs text-zinc-600">{new Date(t.createdAt).toLocaleDateString('en-GB')}</span>
+                      <span className="text-zinc-600 text-sm">{isExpanded ? '▲' : '▼'}</span>
                     </div>
                   </div>
 
                   {isExpanded && (
-                    <div className="border-t border-gray-100 p-4 space-y-3">
+                    <div className="border-t border-white/[0.04] p-4 space-y-3">
                       {t.aiReasoning && (
                         <div>
-                          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">AI Reasoning</p>
-                          <p className="text-sm text-gray-700">{t.aiReasoning}</p>
+                          <p className="text-xs font-bold uppercase tracking-widest text-zinc-600 mb-1">AI Reasoning</p>
+                          <p className="text-sm text-zinc-300">{t.aiReasoning}</p>
                         </div>
                       )}
                       {kf && kf.length > 0 && (
                         <div>
-                          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Key Factors</p>
+                          <p className="text-xs font-bold uppercase tracking-widest text-zinc-600 mb-1">Key Factors</p>
                           <div className="space-y-1">
                             {kf.map((f, i) => (
                               <div key={i} className="flex items-start gap-1.5 text-sm">
@@ -519,23 +519,23 @@ export default function TransferAdvisorPage() {
                       )}
                       {t.decisionNotes && (
                         <div>
-                          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Your Notes</p>
-                          <p className="text-sm text-gray-700">{t.decisionNotes}</p>
+                          <p className="text-xs font-bold uppercase tracking-widest text-zinc-600 mb-1">Your Notes</p>
+                          <p className="text-sm text-zinc-300">{t.decisionNotes}</p>
                         </div>
                       )}
                       {t.finalFee && (
                         <div>
-                          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Final Fee</p>
-                          <p className="text-sm text-gray-700">{formatFee(t.finalFee, t.offerCurrency)}</p>
+                          <p className="text-xs font-bold uppercase tracking-widest text-zinc-600 mb-1">Final Fee</p>
+                          <p className="text-sm text-zinc-300">{formatFee(t.finalFee, t.offerCurrency)}</p>
                         </div>
                       )}
 
                       {/* Inline update decision */}
-                      <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
+                      <div className="flex items-center gap-3 pt-2 border-t border-white/[0.04]">
                         <select
                           defaultValue={t.userDecision || 'Pending'}
                           onChange={e => updateDecision(t.id, { userDecision: e.target.value })}
-                          className="border border-gray-300 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          className="border border-white/10 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-white/20"
                         >
                           {DECISION_OPTIONS.map(d => <option key={d} value={d}>{d}</option>)}
                         </select>

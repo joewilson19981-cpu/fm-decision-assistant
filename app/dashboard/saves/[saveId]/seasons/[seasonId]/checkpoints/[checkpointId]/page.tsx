@@ -107,15 +107,15 @@ export default async function CheckpointDetailPage({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-            <Link href={`/dashboard/saves/${saveId}`} className="hover:text-gray-700">{checkpoint.season.save.name}</Link>
+          <div className="flex items-center gap-2 text-sm text-zinc-500 mb-1">
+            <Link href={`/dashboard/saves/${saveId}`} className="hover:text-zinc-300">{checkpoint.season.save.name}</Link>
             <span>/</span>
-            <Link href={`/dashboard/saves/${saveId}/seasons/${seasonId}`} className="hover:text-gray-700">{checkpoint.season.seasonLabel}</Link>
+            <Link href={`/dashboard/saves/${saveId}/seasons/${seasonId}`} className="hover:text-zinc-300">{checkpoint.season.seasonLabel}</Link>
             <span>/</span>
             <span>{typeLabel}</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">{typeLabel}</h1>
-          <p className="text-gray-500 text-sm mt-0.5">
+          <h1 className="text-2xl font-bold text-white">{typeLabel}</h1>
+          <p className="text-zinc-500 text-sm mt-0.5">
             {checkpoint.calendarPhase && `${checkpoint.calendarPhase} · `}
             {checkpoint.gamesPlayed != null && `${checkpoint.gamesPlayed} games played`}
           </p>
@@ -128,9 +128,9 @@ export default async function CheckpointDetailPage({
       </div>
 
       {checkpoint.notes && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-          <p className="text-xs font-medium text-gray-500 mb-0.5">Notes</p>
-          <p className="text-sm text-gray-900">{checkpoint.notes}</p>
+        <div className="rounded-xl card-panel border border-white/[0.06] p-4 mb-6">
+          <p className="text-xs font-medium text-zinc-500 mb-0.5">Notes</p>
+          <p className="text-sm text-white">{checkpoint.notes}</p>
         </div>
       )}
 
@@ -169,23 +169,23 @@ export default async function CheckpointDetailPage({
       />
 
       {/* Data sections */}
-      <h2 className="font-semibold text-gray-800 mb-3">Data Entry</h2>
+      <h2 className="font-semibold text-white mb-3">Data Entry</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {sections.map(section => (
           <Link key={section.key} href={`${base}/${section.key}`}>
-            <div className={`bg-white rounded-xl border p-5 hover:shadow-sm transition-all cursor-pointer ${
-              section.done ? 'border-green-200' : 'border-gray-200 hover:border-blue-300'
+            <div className={`rounded-xl card-panel border p-5 hover:shadow-sm transition-all cursor-pointer ${
+              section.done ? 'border-green-200' : 'border-white/[0.06] hover:border-blue-300'
             }`}>
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="font-medium text-gray-800">{section.label}</p>
+                  <p className="font-medium text-white">{section.label}</p>
                   {section.summary
-                    ? <p className="text-xs text-gray-500 mt-1">{section.summary}</p>
-                    : <p className="text-xs text-gray-400 mt-1">Not entered yet</p>
+                    ? <p className="text-xs text-zinc-500 mt-1">{section.summary}</p>
+                    : <p className="text-xs text-zinc-600 mt-1">Not entered yet</p>
                   }
                 </div>
                 <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ml-2 ${
-                  section.done ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                  section.done ? 'bg-green-100 text-green-700' : ' text-zinc-500'
                 }`}>
                   {section.done ? 'Done' : 'Add'}
                 </span>

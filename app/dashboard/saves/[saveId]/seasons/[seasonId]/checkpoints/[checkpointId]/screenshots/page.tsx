@@ -123,13 +123,13 @@ export default function ScreenshotsPage() {
   return (
     <div className="max-w-3xl">
       <div className="mb-6">
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-          <Link href={base} className="hover:text-gray-700">Checkpoint</Link>
+        <div className="flex items-center gap-2 text-sm text-zinc-500 mb-1">
+          <Link href={base} className="hover:text-zinc-300">Checkpoint</Link>
           <span>/</span>
           <span>Screenshots</span>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">Screenshots</h1>
-        <p className="text-gray-500 text-sm mt-1">Upload screenshots from your FM save. Drag and drop or click to select.</p>
+        <h1 className="text-2xl font-bold text-white">Screenshots</h1>
+        <p className="text-zinc-500 text-sm mt-1">Upload screenshots from your FM save. Drag and drop or click to select.</p>
       </div>
 
       {/* Drop zone */}
@@ -137,11 +137,11 @@ export default function ScreenshotsPage() {
         onDrop={onDrop}
         onDragOver={e => e.preventDefault()}
         onClick={() => inputRef.current?.click()}
-        className="border-2 border-dashed border-gray-300 rounded-xl p-10 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all mb-6"
+        className="border-2 border-dashed border-white/10 rounded-xl p-10 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all mb-6"
       >
         <div className="text-4xl mb-2">📸</div>
-        <p className="text-sm font-medium text-gray-700">Drop screenshots here or click to browse</p>
-        <p className="text-xs text-gray-400 mt-1">PNG, JPG, WebP — any number of files</p>
+        <p className="text-sm font-medium text-zinc-300">Drop screenshots here or click to browse</p>
+        <p className="text-xs text-zinc-600 mt-1">PNG, JPG, WebP — any number of files</p>
         <input
           ref={inputRef}
           type="file"
@@ -156,14 +156,14 @@ export default function ScreenshotsPage() {
       {files.length > 0 && (
         <div className="space-y-3 mb-6">
           {files.map((f, i) => (
-            <div key={i} className="bg-white rounded-xl border border-gray-200 p-3 flex items-center gap-4">
-              <img src={f.preview} alt="" className="w-16 h-12 object-cover rounded-lg shrink-0 border border-gray-200" />
+            <div key={i} className="rounded-xl card-panel border border-white/[0.06] p-3 flex items-center gap-4">
+              <img src={f.preview} alt="" className="w-16 h-12 object-cover rounded-lg shrink-0 border border-white/[0.06]" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-800 truncate">{f.originalFilename}</p>
+                <p className="text-sm font-medium text-white truncate">{f.originalFilename}</p>
                 <select
                   value={f.type}
                   onChange={e => updateType(i, e.target.value)}
-                  className="mt-1 border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="mt-1 border border-white/[0.06] rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-white/20"
                 >
                   <option value="">No category</option>
                   {SCREENSHOT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
@@ -174,7 +174,7 @@ export default function ScreenshotsPage() {
                 {f.status === 'done' && <span className="text-xs text-green-600">✓ Done</span>}
                 {f.status === 'error' && <span className="text-xs text-red-500">Failed</span>}
                 {f.status === 'pending' && (
-                  <button onClick={() => removeFile(i)} className="text-gray-300 hover:text-red-400 text-sm">✕</button>
+                  <button onClick={() => removeFile(i)} className="text-zinc-600 hover:text-red-400 text-sm">✕</button>
                 )}
               </div>
             </div>
@@ -190,12 +190,12 @@ export default function ScreenshotsPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="bg-white text-black px-5 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
           >
             {saving ? 'Uploading...' : `Upload ${files.filter(f => f.status === 'pending').length} screenshot${files.filter(f => f.status === 'pending').length !== 1 ? 's' : ''}`}
           </button>
         )}
-        <Link href={base} className="border border-gray-300 text-gray-700 px-5 py-2 rounded-lg text-sm font-medium hover:bg-gray-50">
+        <Link href={base} className="border border-white/10 text-zinc-300 px-5 py-2 rounded-lg text-sm font-medium hover:">
           {saved ? 'Back to checkpoint' : 'Cancel'}
         </Link>
       </div>

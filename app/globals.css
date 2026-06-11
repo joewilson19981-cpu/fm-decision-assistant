@@ -92,8 +92,34 @@
 
 body {
   background-color: #080808;
-  color: #f1f5f9;
+  color: #ffffff;
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ── Global dark form overrides — applies to every page ───────────────────── */
+input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="range"]),
+select,
+textarea {
+  background-color: #0a0a0a !important;
+  border-color: rgba(255,255,255,0.08) !important;
+  color: #ffffff !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #444444 !important;
+}
+
+select option {
+  background-color: #0a0a0a;
+  color: #ffffff;
+}
+
+/* Force white card panels to dark */
+.card-panel {
+  background-color: #101010;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 0.75rem;
 }
 
 .dark {

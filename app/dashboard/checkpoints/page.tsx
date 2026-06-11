@@ -24,16 +24,16 @@ export default async function CheckpointsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Checkpoints</h1>
-        <p className="text-gray-500 text-sm mt-1">All checkpoints across your saves</p>
+        <h1 className="text-2xl font-bold text-white">Checkpoints</h1>
+        <p className="text-zinc-500 text-sm mt-1">All checkpoints across your saves</p>
       </div>
 
       {checkpoints.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-10 text-center">
+        <div className="rounded-xl card-panel border border-white/[0.06] p-10 text-center">
           <div className="text-4xl mb-3">📋</div>
-          <h2 className="text-lg font-semibold text-gray-800 mb-2">No checkpoints yet</h2>
-          <p className="text-sm text-gray-500 mb-4">Open a season and create a checkpoint.</p>
-          <Link href="/dashboard/seasons" className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
+          <h2 className="text-lg font-semibold text-white mb-2">No checkpoints yet</h2>
+          <p className="text-sm text-zinc-500 mb-4">Open a season and create a checkpoint.</p>
+          <Link href="/dashboard/seasons" className="bg-white text-black px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
             Go to Seasons
           </Link>
         </div>
@@ -41,13 +41,13 @@ export default async function CheckpointsPage() {
         <div className="space-y-3">
           {checkpoints.map(cp => (
             <Link key={cp.id} href={`/dashboard/saves/${cp.season.saveId}/seasons/${cp.seasonId}/checkpoints/${cp.id}`}>
-              <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer flex items-center justify-between">
+              <div className="rounded-xl card-panel border border-white/[0.06] p-5 hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-gray-900">{TYPE_LABELS[cp.checkpointType] ?? cp.checkpointType}</h3>
-                    <span className="text-xs text-gray-400">· {cp.season.seasonLabel} · {cp.season.save.name}</span>
+                    <h3 className="font-semibold text-white">{TYPE_LABELS[cp.checkpointType] ?? cp.checkpointType}</h3>
+                    <span className="text-xs text-zinc-600">· {cp.season.seasonLabel} · {cp.season.save.name}</span>
                   </div>
-                  <p className="text-sm text-gray-500 mt-0.5">
+                  <p className="text-sm text-zinc-500 mt-0.5">
                     {cp.calendarPhase && `${cp.calendarPhase}`}
                     {cp.gamesPlayed != null && ` · ${cp.gamesPlayed} games`}
                     {cp.inGameDate && ` · ${new Date(cp.inGameDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`}

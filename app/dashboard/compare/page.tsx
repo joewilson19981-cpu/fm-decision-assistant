@@ -40,13 +40,13 @@ export default async function ComparePage() {
     return (
       <div>
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Season Comparison</h1>
-          <p className="text-gray-500 text-sm mt-1">Compare your stats at the same point across multiple seasons.</p>
+          <h1 className="text-2xl font-bold text-white">Season Comparison</h1>
+          <p className="text-zinc-500 text-sm mt-1">Compare your stats at the same point across multiple seasons.</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-10 text-center">
+        <div className="rounded-xl card-panel border border-white/[0.06] p-10 text-center">
           <div className="text-4xl mb-3">📊</div>
-          <h2 className="text-lg font-semibold text-gray-800 mb-2">No data yet</h2>
-          <p className="text-sm text-gray-500 max-w-sm mx-auto">
+          <h2 className="text-lg font-semibold text-white mb-2">No data yet</h2>
+          <p className="text-sm text-zinc-500 max-w-sm mx-auto">
             Add seasons and use AI Import on checkpoints — comparisons will appear here automatically.
           </p>
         </div>
@@ -57,8 +57,8 @@ export default async function ComparePage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Season Comparison</h1>
-        <p className="text-gray-500 text-sm mt-1">Same league · same milestone · different seasons — see how you're progressing.</p>
+        <h1 className="text-2xl font-bold text-white">Season Comparison</h1>
+        <p className="text-zinc-500 text-sm mt-1">Same league · same milestone · different seasons — see how you're progressing.</p>
       </div>
 
       <div className="space-y-10">
@@ -79,37 +79,37 @@ export default async function ComparePage() {
           return (
             <div key={league}>
               <div className="flex items-center justify-between mb-3">
-                <h2 className="font-semibold text-gray-900 text-lg">{league}</h2>
-                <span className="text-xs text-gray-400">{leagueSeasons.length} season{leagueSeasons.length !== 1 ? 's' : ''}</span>
+                <h2 className="font-semibold text-white text-lg">{league}</h2>
+                <span className="text-xs text-zinc-600">{leagueSeasons.length} season{leagueSeasons.length !== 1 ? 's' : ''}</span>
               </div>
 
               {/* Overview matrix */}
-              <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto mb-4">
+              <div className="rounded-xl card-panel border border-white/[0.06] overflow-x-auto mb-4">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-100">
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 w-44">Season</th>
+                    <tr className=" border-b border-white/[0.04]">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 w-44">Season</th>
                       {MILESTONES.map(m => (
                         <th key={m.type} className="px-3 py-3 text-center min-w-[90px]">
-                          <span className="text-xs font-bold text-gray-700 block">{m.short}</span>
-                          <span className="text-xs text-gray-400 font-normal">{m.label}</span>
+                          <span className="text-xs font-bold text-zinc-300 block">{m.short}</span>
+                          <span className="text-xs text-zinc-600 font-normal">{m.label}</span>
                         </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {rows.map(({ season, cpByType }) => (
-                      <tr key={season.id} className="hover:bg-gray-50/50">
+                      <tr key={season.id} className="hover:/50">
                         <td className="px-4 py-3">
                           <Link href={`/dashboard/saves/${season.saveId}/seasons/${season.id}`}>
-                            <p className="font-semibold text-gray-900 hover:text-blue-600 transition-colors text-sm">
+                            <p className="font-semibold text-white hover:text-white transition-colors text-sm">
                               {season.seasonLabel}
                             </p>
-                            <p className="text-xs text-gray-400">{season.save.name}</p>
+                            <p className="text-xs text-zinc-600">{season.save.name}</p>
                           </Link>
                           <span className={`inline-block mt-1 text-xs px-1.5 py-0.5 rounded-full ${
                             season.status === 'active' ? 'bg-green-100 text-green-700' :
-                            season.status === 'completed' ? 'bg-gray-100 text-gray-500' :
+                            season.status === 'completed' ? ' text-zinc-500' :
                             'bg-yellow-100 text-yellow-700'
                           }`}>{season.status}</span>
                         </td>
@@ -128,15 +128,15 @@ export default async function ComparePage() {
                               <Link href={`/dashboard/saves/${season.saveId}/seasons/${season.id}/checkpoints/${cp.id}`}>
                                 <div className="hover:bg-blue-50 rounded-lg px-1 py-1 transition-colors inline-block">
                                   {ts.leaguePosition != null && (
-                                    <p className="font-bold text-gray-900 text-sm leading-tight">
-                                      {ts.leaguePosition}<span className="text-xs text-gray-400 font-normal">th</span>
+                                    <p className="font-bold text-white text-sm leading-tight">
+                                      {ts.leaguePosition}<span className="text-xs text-zinc-600 font-normal">th</span>
                                     </p>
                                   )}
                                   {ts.points != null && (
-                                    <p className="text-xs text-gray-500">{ts.points} pts</p>
+                                    <p className="text-xs text-zinc-500">{ts.points} pts</p>
                                   )}
                                   {ts.wins != null && (
-                                    <p className="text-xs text-gray-400">{ts.wins}W·{ts.draws}D·{ts.losses}L</p>
+                                    <p className="text-xs text-zinc-600">{ts.wins}W·{ts.draws}D·{ts.losses}L</p>
                                   )}
                                 </div>
                               </Link>
@@ -148,8 +148,8 @@ export default async function ComparePage() {
                   </tbody>
                 </table>
 
-                <div className="border-t border-gray-100 bg-gray-50 px-4 py-2.5">
-                  <p className="text-xs text-gray-400">
+                <div className="border-t border-white/[0.04]  px-4 py-2.5">
+                  <p className="text-xs text-zinc-600">
                     {activeMilestones.length === 0
                       ? 'No checkpoint data yet — use AI Import on each checkpoint to populate this table'
                       : `${activeMilestones.length} of 5 milestones filled · click any cell to view that checkpoint`
@@ -174,15 +174,15 @@ export default async function ComparePage() {
                 }
 
                 return (
-                  <div key={m.type} className="bg-white rounded-xl border border-gray-200 overflow-x-auto mb-4">
-                    <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
-                      <p className="font-semibold text-gray-800 text-sm">{m.label} — full breakdown</p>
+                  <div key={m.type} className="rounded-xl card-panel border border-white/[0.06] overflow-x-auto mb-4">
+                    <div className="px-4 py-3 border-b border-white/[0.04] ">
+                      <p className="font-semibold text-white text-sm">{m.label} — full breakdown</p>
                     </div>
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-b border-gray-100">
+                        <tr className="border-b border-white/[0.04]">
                           {['Season','Pos','P','W','D','L','GF','GA','GD','Pts','xG','Poss%'].map(h => (
-                            <th key={h} className="px-3 py-2 text-center text-xs text-gray-400 font-medium first:text-left first:px-4">{h}</th>
+                            <th key={h} className="px-3 py-2 text-center text-xs text-zinc-600 font-medium first:text-left first:px-4">{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -194,27 +194,27 @@ export default async function ComparePage() {
                           const isBestGD = ts.goalDiff === best.goalDiff
 
                           return (
-                            <tr key={season.id} className="hover:bg-gray-50">
+                            <tr key={season.id} className="hover:">
                               <td className="px-4 py-2.5">
-                                <p className="font-semibold text-gray-900 text-xs">{season.seasonLabel}</p>
+                                <p className="font-semibold text-white text-xs">{season.seasonLabel}</p>
                               </td>
-                              <td className={`px-3 py-2.5 text-center font-bold text-sm ${isBestPos ? 'text-green-600' : 'text-gray-800'}`}>
+                              <td className={`px-3 py-2.5 text-center font-bold text-sm ${isBestPos ? 'text-green-600' : 'text-white'}`}>
                                 {ts.leaguePosition ?? <span className="text-gray-200">—</span>}
                               </td>
-                              <td className="px-3 py-2.5 text-center text-gray-600">{ts.played ?? '—'}</td>
-                              <td className="px-3 py-2.5 text-center text-gray-600">{ts.wins ?? '—'}</td>
-                              <td className="px-3 py-2.5 text-center text-gray-600">{ts.draws ?? '—'}</td>
-                              <td className="px-3 py-2.5 text-center text-gray-600">{ts.losses ?? '—'}</td>
-                              <td className="px-3 py-2.5 text-center text-gray-600">{ts.goalsFor ?? '—'}</td>
-                              <td className="px-3 py-2.5 text-center text-gray-600">{ts.goalsAgainst ?? '—'}</td>
-                              <td className={`px-3 py-2.5 text-center font-medium ${isBestGD ? 'text-green-600' : 'text-gray-600'}`}>
+                              <td className="px-3 py-2.5 text-center text-zinc-400">{ts.played ?? '—'}</td>
+                              <td className="px-3 py-2.5 text-center text-zinc-400">{ts.wins ?? '—'}</td>
+                              <td className="px-3 py-2.5 text-center text-zinc-400">{ts.draws ?? '—'}</td>
+                              <td className="px-3 py-2.5 text-center text-zinc-400">{ts.losses ?? '—'}</td>
+                              <td className="px-3 py-2.5 text-center text-zinc-400">{ts.goalsFor ?? '—'}</td>
+                              <td className="px-3 py-2.5 text-center text-zinc-400">{ts.goalsAgainst ?? '—'}</td>
+                              <td className={`px-3 py-2.5 text-center font-medium ${isBestGD ? 'text-green-600' : 'text-zinc-400'}`}>
                                 {ts.goalDiff != null ? (ts.goalDiff > 0 ? `+${ts.goalDiff}` : ts.goalDiff) : '—'}
                               </td>
-                              <td className={`px-3 py-2.5 text-center font-bold ${isBestPts ? 'text-green-600' : 'text-gray-800'}`}>
+                              <td className={`px-3 py-2.5 text-center font-bold ${isBestPts ? 'text-green-600' : 'text-white'}`}>
                                 {ts.points ?? '—'}
                               </td>
-                              <td className="px-3 py-2.5 text-center text-gray-600">{ts.xg ?? '—'}</td>
-                              <td className="px-3 py-2.5 text-center text-gray-600">
+                              <td className="px-3 py-2.5 text-center text-zinc-400">{ts.xg ?? '—'}</td>
+                              <td className="px-3 py-2.5 text-center text-zinc-400">
                                 {ts.possession != null ? `${ts.possession}%` : '—'}
                               </td>
                             </tr>
@@ -222,8 +222,8 @@ export default async function ComparePage() {
                         })}
                       </tbody>
                     </table>
-                    <div className="px-4 py-2 border-t border-gray-100 bg-gray-50">
-                      <p className="text-xs text-gray-400">Green = best value across seasons</p>
+                    <div className="px-4 py-2 border-t border-white/[0.04] ">
+                      <p className="text-xs text-zinc-600">Green = best value across seasons</p>
                     </div>
                   </div>
                 )

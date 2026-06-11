@@ -84,7 +84,7 @@ const VERDICT_STYLES: Record<string, { bg: string; text: string; badge: string }
   flying:     { bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-800', badge: 'bg-emerald-100 text-emerald-700' },
   solid:      { bg: 'bg-blue-50 border-blue-200',       text: 'text-blue-800',    badge: 'bg-blue-100 text-blue-700' },
   mixed:      { bg: 'bg-yellow-50 border-yellow-200',   text: 'text-yellow-800',  badge: 'bg-yellow-100 text-yellow-700' },
-  concerning: { bg: 'bg-orange-50 border-orange-200',   text: 'text-orange-800',  badge: 'bg-orange-100 text-orange-700' },
+  concerning: { bg: 'bg-orange-50 border-orange-200',   text: 'text-orange-800',  badge: 'bg-amber-500/10 text-amber-400' },
   crisis:     { bg: 'bg-red-50 border-red-200',         text: 'text-red-800',     badge: 'bg-red-100 text-red-700' },
 }
 
@@ -113,7 +113,7 @@ function DebriefCard({ debrief, base }: { debrief: any; base?: string }) {
             <p className="text-xs font-bold uppercase tracking-wide text-emerald-700 mb-2">✅ What&apos;s working</p>
             <ul className="space-y-1.5">
               {debrief.positives.map((p: string, i: number) => (
-                <li key={i} className="text-sm text-gray-700 flex gap-2">
+                <li key={i} className="text-sm text-zinc-300 flex gap-2">
                   <span className="text-emerald-500 shrink-0 mt-0.5">•</span>
                   <span>{p}</span>
                 </li>
@@ -128,7 +128,7 @@ function DebriefCard({ debrief, base }: { debrief: any; base?: string }) {
             <p className="text-xs font-bold uppercase tracking-wide text-amber-700 mb-2">⚠️ Areas of concern</p>
             <ul className="space-y-1.5">
               {debrief.concerns.map((c: string, i: number) => (
-                <li key={i} className="text-sm text-gray-700 flex gap-2">
+                <li key={i} className="text-sm text-zinc-300 flex gap-2">
                   <span className="text-amber-500 shrink-0 mt-0.5">•</span>
                   <span>{c}</span>
                 </li>
@@ -142,14 +142,14 @@ function DebriefCard({ debrief, base }: { debrief: any; base?: string }) {
       {(debrief.squadNote || debrief.financialNote) && (
         <div className="flex flex-wrap gap-3 mb-4">
           {debrief.squadNote && (
-            <div className="bg-white/60 rounded-lg px-3 py-2 text-sm text-gray-700 flex-1 min-w-[200px]">
-              <span className="font-semibold text-gray-500 text-xs uppercase tracking-wide block mb-0.5">🏥 Squad</span>
+            <div className="card-panel/60 rounded-lg px-3 py-2 text-sm text-zinc-300 flex-1 min-w-[200px]">
+              <span className="font-semibold text-zinc-500 text-xs uppercase tracking-wide block mb-0.5">🏥 Squad</span>
               {debrief.squadNote}
             </div>
           )}
           {debrief.financialNote && (
-            <div className="bg-white/60 rounded-lg px-3 py-2 text-sm text-gray-700 flex-1 min-w-[200px]">
-              <span className="font-semibold text-gray-500 text-xs uppercase tracking-wide block mb-0.5">💰 Finances</span>
+            <div className="card-panel/60 rounded-lg px-3 py-2 text-sm text-zinc-300 flex-1 min-w-[200px]">
+              <span className="font-semibold text-zinc-500 text-xs uppercase tracking-wide block mb-0.5">💰 Finances</span>
               {debrief.financialNote}
             </div>
           )}
@@ -158,15 +158,15 @@ function DebriefCard({ debrief, base }: { debrief: any; base?: string }) {
 
       {/* Looking ahead */}
       {debrief.lookingAhead && (
-        <div className="bg-white/70 rounded-lg px-4 py-3 border border-white/50">
-          <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-1">🔭 Looking ahead</p>
-          <p className="text-sm text-gray-700">{debrief.lookingAhead}</p>
+        <div className="card-panel/70 rounded-lg px-4 py-3 border border-white/50">
+          <p className="text-xs font-bold uppercase tracking-wide text-zinc-500 mb-1">🔭 Looking ahead</p>
+          <p className="text-sm text-zinc-300">{debrief.lookingAhead}</p>
         </div>
       )}
 
       {base && (
         <div className="mt-4 pt-3 border-t border-white/50">
-          <Link href={base} className="text-xs text-gray-500 hover:text-gray-700">
+          <Link href={base} className="text-xs text-zinc-500 hover:text-zinc-300">
             Back to checkpoint →
           </Link>
         </div>
@@ -191,7 +191,7 @@ function DataPreview({ extracted }: { extracted: any }) {
   if (extracted.medical?.currentInjuries != null) items.push(`Injuries: ${extracted.medical.currentInjuries}`)
   if (extracted.playerStats?.length) items.push(`Players: ${extracted.playerStats.length}`)
 
-  if (items.length === 0) return <p className="text-xs text-gray-400 mt-1">No data recognised</p>
+  if (items.length === 0) return <p className="text-xs text-zinc-600 mt-1">No data recognised</p>
 
   return (
     <div className="flex flex-wrap gap-1.5 mt-2">
@@ -386,13 +386,13 @@ export default function AiImportPage() {
   return (
     <div className="max-w-3xl">
       <div className="mb-6">
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-          <Link href={base} className="hover:text-gray-700">Checkpoint</Link>
+        <div className="flex items-center gap-2 text-sm text-zinc-500 mb-1">
+          <Link href={base} className="hover:text-zinc-300">Checkpoint</Link>
           <span>/</span>
           <span>AI Import</span>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">🤖 AI Import from Screenshots</h1>
-        <p className="text-gray-500 text-sm mt-1">
+        <h1 className="text-2xl font-bold text-white">🤖 AI Import from Screenshots</h1>
+        <p className="text-zinc-500 text-sm mt-1">
           Drop your FM screenshots here. Claude will read every stat, table, and figure automatically, then save it all to this checkpoint in one click.
         </p>
       </div>
@@ -439,7 +439,7 @@ export default function AiImportPage() {
             <div className="text-5xl mb-3">🤖</div>
             <p className="text-sm font-semibold text-blue-800">Drop FM screenshots here</p>
             <p className="text-xs text-blue-500 mt-1">Claude will read them automatically — no manual entry needed</p>
-            <p className="text-xs text-gray-400 mt-2">PNG, JPG, WebP · multiple files supported</p>
+            <p className="text-xs text-zinc-600 mt-2">PNG, JPG, WebP · multiple files supported</p>
             <input
               ref={inputRef}
               type="file"
@@ -454,22 +454,22 @@ export default function AiImportPage() {
           {files.length > 0 && (
             <div className="space-y-3 mb-6">
               {files.map((f, i) => (
-                <div key={i} className={`bg-white rounded-xl border p-4 ${
+                <div key={i} className={`rounded-xl card-panel border p-4 ${
                   f.status === 'done' ? 'border-green-200' :
                   f.status === 'error' ? 'border-red-200' :
-                  'border-gray-200'
+                  'border-white/[0.06]'
                 }`}>
                   <div className="flex items-start gap-3">
-                    <img src={f.preview} alt="" className="w-20 h-14 object-cover rounded-lg border border-gray-200 shrink-0" />
+                    <img src={f.preview} alt="" className="w-20 h-14 object-cover rounded-lg border border-white/[0.06] shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-base">{statusIcon[f.status]}</span>
-                        <p className="text-sm font-medium text-gray-800 truncate">{f.file.name}</p>
+                        <p className="text-sm font-medium text-white truncate">{f.file.name}</p>
                         <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ml-auto ${
                           f.status === 'done' ? 'bg-green-100 text-green-700' :
                           f.status === 'error' ? 'bg-red-100 text-red-600' :
                           f.status === 'analyzing' ? 'bg-purple-100 text-purple-700' :
-                          'bg-gray-100 text-gray-500'
+                          ' text-zinc-500'
                         }`}>
                           {statusLabel[f.status]}
                         </span>
@@ -488,20 +488,20 @@ export default function AiImportPage() {
 
           {/* Summary of what will be saved */}
           {merged && (
-            <div className="bg-white border border-blue-200 rounded-xl p-5 mb-6">
-              <h3 className="font-semibold text-gray-800 mb-3">📋 Ready to apply</h3>
+            <div className="card-panel border border-blue-200 rounded-xl p-5 mb-6">
+              <h3 className="font-semibold text-white mb-3">📋 Ready to apply</h3>
               <div className="grid grid-cols-2 gap-2 text-sm">
-                {merged.gameDate && <div><span className="text-gray-500">Game date:</span> <span className="font-medium">{merged.gameDate}</span></div>}
-                {merged.transferWindow && <div><span className="text-gray-500">Transfer window:</span> <span className="font-medium">{merged.transferWindow}</span></div>}
-                {merged.clubName && <div><span className="text-gray-500">Club:</span> <span className="font-medium">{merged.clubName}</span></div>}
-                {merged.leagueName && <div><span className="text-gray-500">League:</span> <span className="font-medium">{merged.leagueName}</span></div>}
-                {merged.teamStats?.leaguePosition && <div><span className="text-gray-500">League pos:</span> <span className="font-medium">{merged.teamStats.leaguePosition}</span></div>}
-                {merged.teamStats?.points != null && <div><span className="text-gray-500">Points:</span> <span className="font-medium">{merged.teamStats.points}</span></div>}
-                {merged.leagueTable?.length > 0 && <div><span className="text-gray-500">League table:</span> <span className="font-medium">{merged.leagueTable.length} teams</span></div>}
-                {merged.tactic?.formation && <div><span className="text-gray-500">Formation:</span> <span className="font-medium">{merged.tactic.formation}</span></div>}
-                {merged.finances?.balance != null && <div><span className="text-gray-500">Balance:</span> <span className="font-medium">£{Number(merged.finances.balance).toLocaleString()}</span></div>}
-                {merged.medical?.currentInjuries != null && <div><span className="text-gray-500">Injuries:</span> <span className="font-medium">{merged.medical.currentInjuries}</span></div>}
-                {merged.playerStats?.length > 0 && <div><span className="text-gray-500">Players:</span> <span className="font-medium">{merged.playerStats.length} found</span></div>}
+                {merged.gameDate && <div><span className="text-zinc-500">Game date:</span> <span className="font-medium">{merged.gameDate}</span></div>}
+                {merged.transferWindow && <div><span className="text-zinc-500">Transfer window:</span> <span className="font-medium">{merged.transferWindow}</span></div>}
+                {merged.clubName && <div><span className="text-zinc-500">Club:</span> <span className="font-medium">{merged.clubName}</span></div>}
+                {merged.leagueName && <div><span className="text-zinc-500">League:</span> <span className="font-medium">{merged.leagueName}</span></div>}
+                {merged.teamStats?.leaguePosition && <div><span className="text-zinc-500">League pos:</span> <span className="font-medium">{merged.teamStats.leaguePosition}</span></div>}
+                {merged.teamStats?.points != null && <div><span className="text-zinc-500">Points:</span> <span className="font-medium">{merged.teamStats.points}</span></div>}
+                {merged.leagueTable?.length > 0 && <div><span className="text-zinc-500">League table:</span> <span className="font-medium">{merged.leagueTable.length} teams</span></div>}
+                {merged.tactic?.formation && <div><span className="text-zinc-500">Formation:</span> <span className="font-medium">{merged.tactic.formation}</span></div>}
+                {merged.finances?.balance != null && <div><span className="text-zinc-500">Balance:</span> <span className="font-medium">£{Number(merged.finances.balance).toLocaleString()}</span></div>}
+                {merged.medical?.currentInjuries != null && <div><span className="text-zinc-500">Injuries:</span> <span className="font-medium">{merged.medical.currentInjuries}</span></div>}
+                {merged.playerStats?.length > 0 && <div><span className="text-zinc-500">Players:</span> <span className="font-medium">{merged.playerStats.length} found</span></div>}
               </div>
             </div>
           )}
@@ -517,7 +517,7 @@ export default function AiImportPage() {
               <button
                 onClick={handleApplyAll}
                 disabled={applying}
-                className="bg-blue-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                className="bg-white text-black px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
               >
                 {applying ? (
                   <>Saving... <span className="animate-spin">⟳</span></>
@@ -532,7 +532,7 @@ export default function AiImportPage() {
                 Analysing screenshots...
               </div>
             )}
-            <Link href={base} className="border border-gray-300 text-gray-700 px-5 py-2 rounded-lg text-sm font-medium hover:bg-gray-50">
+            <Link href={base} className="border border-white/10 text-zinc-300 px-5 py-2 rounded-lg text-sm font-medium hover:">
               Cancel
             </Link>
           </div>

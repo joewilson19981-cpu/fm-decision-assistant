@@ -91,49 +91,49 @@ export default function NewSeasonPage() {
   return (
     <div className="max-w-2xl">
       <div className="mb-6">
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-          <Link href="/dashboard/saves" className="hover:text-gray-700">Saves</Link>
+        <div className="flex items-center gap-2 text-sm text-zinc-500 mb-1">
+          <Link href="/dashboard/saves" className="hover:text-zinc-300">Saves</Link>
           <span>/</span>
-          <Link href={`/dashboard/saves/${saveId}`} className="hover:text-gray-700">Save</Link>
+          <Link href={`/dashboard/saves/${saveId}`} className="hover:text-zinc-300">Save</Link>
           <span>/</span>
           <span>New Season</span>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">New Season</h1>
-        <p className="text-gray-500 text-sm mt-1">Set up this season's details.</p>
+        <h1 className="text-2xl font-bold text-white">New Season</h1>
+        <p className="text-zinc-500 text-sm mt-1">Set up this season's details.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Core details */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-          <h2 className="font-semibold text-gray-800">Season Details</h2>
+        <div className="rounded-xl card-panel border border-white/[0.06] p-5 space-y-4">
+          <h2 className="font-semibold text-white">Season Details</h2>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Season label <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Season label <span className="text-red-500">*</span></label>
               <input
                 type="text"
                 required
                 value={form.seasonLabel}
                 onChange={e => update('seasonLabel', e.target.value)}
                 placeholder="e.g. 2025/26"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Club <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Club <span className="text-red-500">*</span></label>
               <input
                 type="text"
                 required
                 value={form.clubName}
                 onChange={e => update('clubName', e.target.value)}
                 placeholder="e.g. Dagenham & Redbridge"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">League <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">League <span className="text-red-500">*</span></label>
             <select
               required
               value={form.leagueName}
@@ -155,7 +155,7 @@ export default function NewSeasonPage() {
                 update('leagueName', val)
                 if (divMap[val]) update('divisionLevel', divMap[val])
               }}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="w-full border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/20 card-panel"
             >
               <option value="">Select a league…</option>
               {LEAGUE_OPTIONS.map(group => (
@@ -169,7 +169,7 @@ export default function NewSeasonPage() {
             {form.leagueName === 'Other / Custom' && (
               <input
                 type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mt-2"
+                className="w-full border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/20 mt-2"
                 placeholder="Enter league name…"
                 onChange={e => update('leagueName', e.target.value || 'Other / Custom')}
               />
@@ -177,89 +177,89 @@ export default function NewSeasonPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Board expectation</label>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">Board expectation</label>
             <input
               type="text"
               value={form.boardExpectation}
               onChange={e => update('boardExpectation', e.target.value)}
               placeholder="e.g. Avoid relegation"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Season objective</label>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">Season objective</label>
             <input
               type="text"
               value={form.seasonObjective}
               onChange={e => update('seasonObjective', e.target.value)}
               placeholder="e.g. Push for playoffs, develop youth players"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
             />
           </div>
         </div>
 
         {/* Budget */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-          <h2 className="font-semibold text-gray-800">Budget</h2>
+        <div className="rounded-xl card-panel border border-white/[0.06] p-5 space-y-4">
+          <h2 className="font-semibold text-white">Budget</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Transfer budget (£)</label>
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Transfer budget (£)</label>
               <input
                 type="number"
                 value={form.transferBudget}
                 onChange={e => update('transferBudget', e.target.value)}
                 placeholder="e.g. 50000"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Wage budget (£/week)</label>
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Wage budget (£/week)</label>
               <input
                 type="number"
                 value={form.wageBudget}
                 onChange={e => update('wageBudget', e.target.value)}
                 placeholder="e.g. 15000"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
               />
             </div>
           </div>
         </div>
 
         {/* Optional notes */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-          <h2 className="font-semibold text-gray-800">Notes <span className="text-xs font-normal text-gray-400">(optional)</span></h2>
+        <div className="rounded-xl card-panel border border-white/[0.06] p-5 space-y-4">
+          <h2 className="font-semibold text-white">Notes <span className="text-xs font-normal text-zinc-600">(optional)</span></h2>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tactic notes</label>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">Tactic notes</label>
             <textarea
               value={form.tacticNotes}
               onChange={e => update('tacticNotes', e.target.value)}
               placeholder="e.g. Trying 4-3-3 with high press..."
               rows={2}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Recruitment priorities</label>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">Recruitment priorities</label>
             <textarea
               value={form.recruitmentPriorities}
               onChange={e => update('recruitmentPriorities', e.target.value)}
               placeholder="e.g. Need a striker and a right back on free transfers..."
               rows={2}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">General notes</label>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">General notes</label>
             <textarea
               value={form.notes}
               onChange={e => update('notes', e.target.value)}
               placeholder="Anything else..."
               rows={2}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
             />
           </div>
         </div>
@@ -272,14 +272,14 @@ export default function NewSeasonPage() {
           <button
             type="submit"
             disabled={loading}
-            className="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="bg-white text-black px-5 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
           >
             {loading ? 'Creating...' : 'Create Season'}
           </button>
           <button
             type="button"
             onClick={() => router.back()}
-            className="border border-gray-300 text-gray-700 px-5 py-2 rounded-lg text-sm font-medium hover:bg-gray-50"
+            className="border border-white/10 text-zinc-300 px-5 py-2 rounded-lg text-sm font-medium hover:"
           >
             Cancel
           </button>

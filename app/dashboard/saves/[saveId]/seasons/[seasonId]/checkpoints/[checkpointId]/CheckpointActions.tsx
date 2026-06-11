@@ -4,7 +4,7 @@ import { useState } from 'react'
 
 const VERDICT_STYLES: Record<string, { bg: string; text: string; badge: string }> = {
   flying:     { bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-800', badge: 'bg-emerald-500 text-white' },
-  solid:      { bg: 'bg-blue-50 border-blue-200',       text: 'text-blue-800',    badge: 'bg-blue-500 text-white' },
+  solid:      { bg: 'bg-blue-50 border-blue-200',       text: 'text-blue-800',    badge: 'bg-white text-black' },
   mixed:      { bg: 'bg-yellow-50 border-yellow-200',   text: 'text-yellow-800',  badge: 'bg-yellow-500 text-white' },
   concerning: { bg: 'bg-orange-50 border-orange-200',   text: 'text-orange-800',  badge: 'bg-orange-500 text-white' },
   crisis:     { bg: 'bg-red-50 border-red-200',         text: 'text-red-800',     badge: 'bg-red-500 text-white' },
@@ -51,11 +51,11 @@ export default function CheckpointActions({ checkpointId, saveId, seasonId, exis
   return (
     <div className="mb-6">
       {!debrief ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <div className="rounded-xl card-panel border border-white/[0.06] p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-semibold text-gray-800">📋 AI Debrief</p>
-              <p className="text-xs text-gray-400 mt-0.5">Get an honest analysis of where things stand — what&apos;s working, what&apos;s not, and what to focus on next</p>
+              <p className="font-semibold text-white">📋 AI Debrief</p>
+              <p className="text-xs text-zinc-600 mt-0.5">Get an honest analysis of where things stand — what&apos;s working, what&apos;s not, and what to focus on next</p>
             </div>
             <button
               onClick={generate}
@@ -86,7 +86,7 @@ export default function CheckpointActions({ checkpointId, saveId, seasonId, exis
               <button
                 onClick={e => { e.stopPropagation(); generate() }}
                 disabled={loading}
-                className="text-xs text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg px-2.5 py-1 bg-white/60 hover:bg-white disabled:opacity-50"
+                className="text-xs text-zinc-500 hover:text-zinc-300 border border-white/10 rounded-lg px-2.5 py-1 card-panel/60 hover:card-panel disabled:opacity-50"
               >
                 {loading ? '⟳' : '↻ Regenerate'}
               </button>
@@ -102,7 +102,7 @@ export default function CheckpointActions({ checkpointId, saveId, seasonId, exis
                     <p className="text-xs font-bold uppercase tracking-wide text-emerald-700 mb-2">✅ What&apos;s working</p>
                     <ul className="space-y-1.5">
                       {debrief.positives.map((p: string, i: number) => (
-                        <li key={i} className="text-sm text-gray-700 flex gap-2">
+                        <li key={i} className="text-sm text-zinc-300 flex gap-2">
                           <span className="text-emerald-500 shrink-0 mt-0.5">•</span>
                           <span>{p}</span>
                         </li>
@@ -115,7 +115,7 @@ export default function CheckpointActions({ checkpointId, saveId, seasonId, exis
                     <p className="text-xs font-bold uppercase tracking-wide text-amber-700 mb-2">⚠️ Areas of concern</p>
                     <ul className="space-y-1.5">
                       {debrief.concerns.map((c: string, i: number) => (
-                        <li key={i} className="text-sm text-gray-700 flex gap-2">
+                        <li key={i} className="text-sm text-zinc-300 flex gap-2">
                           <span className="text-amber-500 shrink-0 mt-0.5">•</span>
                           <span>{c}</span>
                         </li>
@@ -128,14 +128,14 @@ export default function CheckpointActions({ checkpointId, saveId, seasonId, exis
               {(debrief.squadNote || debrief.financialNote) && (
                 <div className="flex flex-wrap gap-3">
                   {debrief.squadNote && (
-                    <div className="bg-white/60 rounded-lg px-3 py-2.5 text-sm text-gray-700 flex-1 min-w-[200px]">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-0.5">🏥 Squad</span>
+                    <div className="card-panel/60 rounded-lg px-3 py-2.5 text-sm text-zinc-300 flex-1 min-w-[200px]">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 block mb-0.5">🏥 Squad</span>
                       {debrief.squadNote}
                     </div>
                   )}
                   {debrief.financialNote && (
-                    <div className="bg-white/60 rounded-lg px-3 py-2.5 text-sm text-gray-700 flex-1 min-w-[200px]">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-0.5">💰 Finances</span>
+                    <div className="card-panel/60 rounded-lg px-3 py-2.5 text-sm text-zinc-300 flex-1 min-w-[200px]">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 block mb-0.5">💰 Finances</span>
                       {debrief.financialNote}
                     </div>
                   )}
@@ -143,9 +143,9 @@ export default function CheckpointActions({ checkpointId, saveId, seasonId, exis
               )}
 
               {debrief.lookingAhead && (
-                <div className="bg-white/70 rounded-lg px-4 py-3">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">🔭 Looking ahead</p>
-                  <p className="text-sm text-gray-700">{debrief.lookingAhead}</p>
+                <div className="card-panel/70 rounded-lg px-4 py-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">🔭 Looking ahead</p>
+                  <p className="text-sm text-zinc-300">{debrief.lookingAhead}</p>
                 </div>
               )}
             </div>

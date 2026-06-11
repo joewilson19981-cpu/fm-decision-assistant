@@ -75,31 +75,31 @@ export default function TeamStatsPage() {
   return (
     <div className="max-w-2xl">
       <div className="mb-6">
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-          <Link href={base} className="hover:text-gray-700">Checkpoint</Link>
+        <div className="flex items-center gap-2 text-sm text-zinc-500 mb-1">
+          <Link href={base} className="hover:text-zinc-300">Checkpoint</Link>
           <span>/</span>
           <span>Team Stats</span>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">Team Stats</h1>
-        <p className="text-gray-500 text-sm mt-1">Enter your team's current league stats. Leave blank anything you don't have.</p>
+        <h1 className="text-2xl font-bold text-white">Team Stats</h1>
+        <p className="text-zinc-500 text-sm mt-1">Enter your team's current league stats. Leave blank anything you don't have.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* League table stats */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-          <h2 className="font-semibold text-gray-800">League Position</h2>
+        <div className="rounded-xl card-panel border border-white/[0.06] p-5 space-y-4">
+          <h2 className="font-semibold text-white">League Position</h2>
           <div className="grid grid-cols-3 gap-3">
             {['leaguePosition', 'played', 'wins', 'draws', 'losses', 'points', 'goalsFor', 'goalsAgainst', 'goalDiff', 'cleanSheets'].map(key => {
               const field = FIELDS.find(f => f.key === key)!
               return (
                 <div key={key}>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">{field.label}</label>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1">{field.label}</label>
                   <input
                     type="number"
                     step={field.type === 'float' ? '0.01' : '1'}
                     value={form[key as keyof typeof form]}
                     onChange={e => update(key, e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-white/10 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
                   />
                 </div>
               )
@@ -108,20 +108,20 @@ export default function TeamStatsPage() {
         </div>
 
         {/* Performance metrics */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-          <h2 className="font-semibold text-gray-800">Performance Metrics</h2>
+        <div className="rounded-xl card-panel border border-white/[0.06] p-5 space-y-4">
+          <h2 className="font-semibold text-white">Performance Metrics</h2>
           <div className="grid grid-cols-3 gap-3">
             {['xg', 'xga', 'possession', 'shotsPerGame', 'passCompletion', 'clearCutChancesFor', 'clearCutChancesAgainst', 'setPieceGoalsFor', 'setPieceGoalsAgainst', 'crossAssistsFor', 'crossAssistsAgainst'].map(key => {
               const field = FIELDS.find(f => f.key === key)!
               return (
                 <div key={key}>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">{field.label}</label>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1">{field.label}</label>
                   <input
                     type="number"
                     step={field.type === 'float' ? '0.01' : '1'}
                     value={form[key as keyof typeof form]}
                     onChange={e => update(key, e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-white/10 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
                   />
                 </div>
               )
@@ -129,24 +129,24 @@ export default function TeamStatsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+        <div className="rounded-xl card-panel border border-white/[0.06] p-5">
+          <label className="block text-sm font-medium text-zinc-300 mb-1">Notes</label>
           <textarea
             value={form.notes}
             onChange={e => update('notes', e.target.value)}
             rows={2}
             placeholder="Any observations..."
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
           />
         </div>
 
         {error && <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded px-3 py-2">{error}</p>}
 
         <div className="flex gap-3">
-          <button type="submit" disabled={loading} className="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+          <button type="submit" disabled={loading} className="bg-white text-black px-5 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
             {loading ? 'Saving...' : 'Save Stats'}
           </button>
-          <Link href={base} className="border border-gray-300 text-gray-700 px-5 py-2 rounded-lg text-sm font-medium hover:bg-gray-50">
+          <Link href={base} className="border border-white/10 text-zinc-300 px-5 py-2 rounded-lg text-sm font-medium hover:">
             Cancel
           </Link>
         </div>

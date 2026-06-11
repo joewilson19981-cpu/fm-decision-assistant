@@ -86,7 +86,7 @@ const SOURCE_CHIP: Record<string, string> = {
   'FMScout':              'bg-blue-100 text-blue-700',
   'Passion4FM':           'bg-purple-100 text-purple-700',
   'FM-Base':              'bg-green-100 text-green-700',
-  'FM26 tactical theory (no external source)': 'bg-gray-100 text-gray-600',
+  'FM26 tactical theory (no external source)': ' text-zinc-400',
 }
 
 export default function TacticLabPage() {
@@ -146,13 +146,13 @@ export default function TacticLabPage() {
     <div className="max-w-3xl">
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-          <Link href={base} className="hover:text-gray-700">Checkpoint</Link>
+        <div className="flex items-center gap-2 text-sm text-zinc-500 mb-1">
+          <Link href={base} className="hover:text-zinc-300">Checkpoint</Link>
           <span>/</span>
           <span>Tactic Lab</span>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">🎮 Tactic Lab</h1>
-        <p className="text-gray-500 text-sm mt-1">
+        <h1 className="text-2xl font-bold text-white">🎮 Tactic Lab</h1>
+        <p className="text-zinc-500 text-sm mt-1">
           Upload your FM26 tactic screenshot. The AI reads your current setup, checks FM community sources, and suggests improvements using exact FM26 instruction names.
         </p>
       </div>
@@ -184,15 +184,15 @@ export default function TacticLabPage() {
           </div>
         ) : preview ? (
           <div className="flex flex-col items-center gap-3">
-            <img src={preview} alt="Tactic screenshot" className="max-h-48 rounded-lg border border-gray-200 shadow-sm" />
-            <p className="text-xs text-gray-400">Click or drop a new screenshot to re-analyse</p>
+            <img src={preview} alt="Tactic screenshot" className="max-h-48 rounded-lg border border-white/[0.06]" />
+            <p className="text-xs text-zinc-600">Click or drop a new screenshot to re-analyse</p>
           </div>
         ) : (
           <div>
             <div className="text-5xl mb-3">🎮</div>
-            <p className="text-sm font-semibold text-gray-700">Drop your FM26 tactic screenshot here</p>
-            <p className="text-xs text-gray-400 mt-1">Works best with the main tactic screen showing your formation and instructions panel</p>
-            <p className="text-xs text-gray-400 mt-0.5">PNG, JPG, WebP</p>
+            <p className="text-sm font-semibold text-zinc-300">Drop your FM26 tactic screenshot here</p>
+            <p className="text-xs text-zinc-600 mt-1">Works best with the main tactic screen showing your formation and instructions panel</p>
+            <p className="text-xs text-zinc-600 mt-0.5">PNG, JPG, WebP</p>
           </div>
         )}
       </div>
@@ -206,49 +206,49 @@ export default function TacticLabPage() {
         <div className="space-y-5">
 
           {/* Formation + Mentality hero */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Current Setup</p>
+          <div className="rounded-xl card-panel border border-white/[0.06] p-5">
+            <p className="text-xs font-bold uppercase tracking-widest text-zinc-600 mb-4">Current Setup</p>
 
             <div className="flex items-center gap-5 mb-5">
               <div className="text-center">
-                <p className="text-4xl font-black text-gray-900">{analysis.formation || '—'}</p>
-                <p className="text-xs text-gray-400 mt-0.5">Formation</p>
+                <p className="text-4xl font-black text-white">{analysis.formation || '—'}</p>
+                <p className="text-xs text-zinc-600 mt-0.5">Formation</p>
               </div>
               <div className="text-gray-200 text-2xl">|</div>
               <div>
-                <p className="text-xl font-bold text-gray-800">{analysis.mentality || '—'}</p>
-                <p className="text-xs text-gray-400">Mentality</p>
+                <p className="text-xl font-bold text-white">{analysis.mentality || '—'}</p>
+                <p className="text-xs text-zinc-600">Mentality</p>
               </div>
             </div>
 
             {/* Attacking sliders */}
             <div className="mb-4">
-              <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">⚽ Attacking</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-zinc-600 mb-2">⚽ Attacking</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1.5">
                 {ATTACKING_FIELDS.filter(f => analysis[f.key] != null).map(f => (
                   <div key={f.key} className="flex items-baseline justify-between gap-2 min-w-0">
-                    <span className="text-xs text-gray-400 shrink-0">{f.label}</span>
-                    <span className="text-xs font-semibold text-gray-800 text-right truncate">{String(analysis[f.key])}</span>
+                    <span className="text-xs text-zinc-600 shrink-0">{f.label}</span>
+                    <span className="text-xs font-semibold text-white text-right truncate">{String(analysis[f.key])}</span>
                   </div>
                 ))}
                 {ATTACKING_FIELDS.every(f => analysis[f.key] == null) && (
-                  <p className="text-xs text-gray-400 italic col-span-3">No attacking instructions visible</p>
+                  <p className="text-xs text-zinc-600 italic col-span-3">No attacking instructions visible</p>
                 )}
               </div>
             </div>
 
             {/* Defensive sliders */}
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">🛡️ Defensive</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-zinc-600 mb-2">🛡️ Defensive</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1.5">
                 {DEFENSIVE_FIELDS.filter(f => analysis[f.key] != null).map(f => (
                   <div key={f.key} className="flex items-baseline justify-between gap-2 min-w-0">
-                    <span className="text-xs text-gray-400 shrink-0">{f.label}</span>
-                    <span className="text-xs font-semibold text-gray-800 text-right truncate">{String(analysis[f.key])}</span>
+                    <span className="text-xs text-zinc-600 shrink-0">{f.label}</span>
+                    <span className="text-xs font-semibold text-white text-right truncate">{String(analysis[f.key])}</span>
                   </div>
                 ))}
                 {DEFENSIVE_FIELDS.every(f => analysis[f.key] == null) && (
-                  <p className="text-xs text-gray-400 italic col-span-3">No defensive instructions visible</p>
+                  <p className="text-xs text-zinc-600 italic col-span-3">No defensive instructions visible</p>
                 )}
               </div>
             </div>
@@ -257,9 +257,9 @@ export default function TacticLabPage() {
           {/* Research sources badge */}
           {analysis.researchSources?.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-gray-400">Suggestions grounded by:</span>
+              <span className="text-xs text-zinc-600">Suggestions grounded by:</span>
               {analysis.researchSources.map(src => (
-                <span key={src} className={`text-xs px-2 py-0.5 rounded-full font-medium ${SOURCE_CHIP[src] ?? 'bg-gray-100 text-gray-600'}`}>
+                <span key={src} className={`text-xs px-2 py-0.5 rounded-full font-medium ${SOURCE_CHIP[src] ?? ' text-zinc-400'}`}>
                   {src}
                 </span>
               ))}
@@ -277,9 +277,9 @@ export default function TacticLabPage() {
           {/* Suggestions */}
           {analysis.suggestions?.length > 0 && (
             <div>
-              <p className="font-bold text-gray-800 mb-3">
+              <p className="font-bold text-white mb-3">
                 Suggested changes
-                <span className="text-xs font-normal text-gray-400 ml-2">— exact FM26 instruction names</span>
+                <span className="text-xs font-normal text-zinc-600 ml-2">— exact FM26 instruction names</span>
               </p>
               <div className="space-y-3">
                 {analysis.suggestions.map((s, i) => {
@@ -296,7 +296,7 @@ export default function TacticLabPage() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
                             <span className="text-xs font-bold uppercase tracking-wide opacity-60">{s.category}</span>
-                            <code className="text-xs font-bold bg-white/70 px-2 py-0.5 rounded border border-black/10">
+                            <code className="text-xs font-bold card-panel/70 px-2 py-0.5 rounded border border-black/10">
                               {s.instruction}
                             </code>
                           </div>
@@ -311,7 +311,7 @@ export default function TacticLabPage() {
                           </div>
                           <p className="text-sm opacity-80 mb-2">{s.reason}</p>
                           {s.source && (
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${SOURCE_CHIP[s.source] ?? 'bg-gray-100 text-gray-600'}`}>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${SOURCE_CHIP[s.source] ?? ' text-zinc-400'}`}>
                               {s.source}
                             </span>
                           )}
@@ -325,7 +325,7 @@ export default function TacticLabPage() {
           )}
 
           <div className="pt-2">
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-zinc-600">
               Instruction names match the exact FM26 in-game options. Always verify against your own in-game setup before making changes.
             </p>
           </div>
