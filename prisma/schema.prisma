@@ -39,7 +39,8 @@ model Save {
   seasons         Season[]
   players         Player[]
   recommendations Recommendation[]
-  actionItems     ActionItem[]
+  actionItems       ActionItem[]
+  transferDecisions TransferDecision[]
 
   @@map("saves")
 }
@@ -354,4 +355,32 @@ model EditAuditLog {
   user User @relation(fields: [userId], references: [id])
 
   @@map("edit_audit_logs")
+}
+
+model TransferDecision {
+  id              String   @id @default(uuid())
+  saveId          String   @map("save_id")
+  playerName      String   @map("player_name")
+  playerAge       Int?     @map("player_age")
+  playerPosition  String?  @map("player_position")
+  buyingClub      String?  @map("buying_club")
+  offerAmount     Float?   @map("offer_amount")
+  offerCurrency   String?  @default("£") @map("offer_currency")
+  offerNotes      String?  @map("offer_notes")
+  screenshotUrls  Json?    @map("screenshot_urls")
+  screenshotPaths Json?    @map("screenshot_paths")
+  aiVerdict       String?  @map("ai_verdict")
+  aiConfidence    String?  @map("ai_confidence")
+  aiReasoning     String?  @map("ai_reasoning")
+  aiKeyFactors    Json?    @map("ai_key_factors")
+  userDecision    String?  @map("user_decision")
+  finalFee        Float?   @map("final_fee")
+  decisionNotes   String?  @map("decision_notes")
+  contextCheckpointId String? @map("context_checkpoint_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  save Save @relation(fields: [saveId], references: [id], onDelete: Cascade)
+
+  @@map("transfer_decisions")
 }

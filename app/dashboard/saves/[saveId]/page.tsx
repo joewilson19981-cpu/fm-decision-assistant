@@ -58,6 +58,12 @@ export default async function SaveDetailPage({ params }: { params: Promise<{ sav
         </div>
         <div className="flex gap-2">
           <Link
+            href={`/dashboard/saves/${save.id}/transfers`}
+            className="border border-blue-600 text-blue-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50"
+          >
+            💸 Transfer Advisor
+          </Link>
+          <Link
             href={`/dashboard/saves/${save.id}/seasons/new`}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
           >
