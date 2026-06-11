@@ -41,6 +41,7 @@ model Save {
   recommendations Recommendation[]
   actionItems       ActionItem[]
   transferDecisions TransferDecision[]
+  youthPlayers    YouthPlayer[]
 
   @@map("saves")
 }
@@ -383,4 +384,48 @@ model TransferDecision {
   save Save @relation(fields: [saveId], references: [id], onDelete: Cascade)
 
   @@map("transfer_decisions")
+}
+
+model YouthPlayer {
+  id           String   @id @default(uuid())
+  saveId       String   @map("save_id")
+  name         String
+  age          Int?
+  position     String?
+  nationality  String?
+  club         String?   // current loan club or academy
+  playerType   String   @default("academy") @map("player_type") // "academy" | "loan"
+  loanReturnDate DateTime? @map("loan_return_date")
+  potential    String?   // e.g. "Determined", "PA range"
+  notes        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  save    Save          @relation(fields: [saveId], references: [id], onDelete: Cascade)
+  updates YouthUpdate[]
+
+  @@map("youth_players")
+}
+
+model YouthUpdate {
+  id            String   @id @default(uuid())
+  youthPlayerId String   @map("youth_player_id")
+  loggedAt      DateTime @default(now()) @map("logged_at")
+  inGameDate    DateTime? @map("in_game_date")
+  rating        Float?    // current ability rating if known
+  apps          Int?      // appearances in this period
+  goals         Int?
+  assists       Int?
+  keyPasses     Int?      @map("key_passes")
+  avgRating     Float?    @map("avg_rating")
+  morale        String?
+  fitness       Int?
+  injuryStatus  String?   @map("injury_status")
+  summary       String?   // free text or AI-generated summary
+  aiImported    Boolean  @default(false) @map("ai_imported")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  youthPlayer YouthPlayer @relation(fields: [youthPlayerId], references: [id], onDelete: Cascade)
+
+  @@map("youth_updates")
 }

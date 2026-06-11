@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Database, Calendar, Camera,
   BarChart2, Users, Star, ClipboardList, BookOpen, LogOut,
+  Layers, GraduationCap, ArrowLeftRight, Target,
 } from 'lucide-react'
 
 const NAV = [
@@ -20,6 +21,10 @@ const NAV = [
 
 const TOOLS = [
   { href: '/dashboard/tactic-library', icon: BookOpen, label: 'Tactic Library' },
+  { href: '/dashboard/set-pieces', icon: Target, label: 'Set Pieces' },
+  { href: '/dashboard/squad-depth', icon: Layers, label: 'Squad Depth' },
+  { href: '/dashboard/youth', icon: GraduationCap, label: 'Youth Tracker' },
+  { href: '/dashboard/transfer-planner', icon: ArrowLeftRight, label: 'Transfer Planner' },
 ]
 
 export default function Sidebar({ email }: { email: string }) {
