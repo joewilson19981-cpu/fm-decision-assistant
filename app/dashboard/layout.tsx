@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { LogOut, LayoutDashboard, Database, Calendar, Camera, Star, ClipboardList, BarChart2, Users } from 'lucide-react'
+import { LogOut, LayoutDashboard, Database, Calendar, Camera, Star, ClipboardList, BarChart2, Users, BookOpen } from 'lucide-react'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -26,6 +26,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <NavLink href="/dashboard/players" icon={<Users size={16} />} label="Players" />
           <NavLink href="/dashboard/recommendations" icon={<Star size={16} />} label="Recommendations" />
           <NavLink href="/dashboard/action-plan" icon={<ClipboardList size={16} />} label="Action Plan" />
+          <NavLink href="/dashboard/tactic-library" icon={<BookOpen size={16} />} label="Tactic Library" />
         </nav>
 
         <div className="px-4 py-4 border-t border-gray-700">
