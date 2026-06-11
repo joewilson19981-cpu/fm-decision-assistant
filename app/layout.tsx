@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FM Decision Assistant",
-  description: "Football Manager save tracking, analytics, and decision support",
+  title: "FM Assistant",
+  description: "Football Manager career analytics and decision support",
 };
 
 export default function RootLayout({

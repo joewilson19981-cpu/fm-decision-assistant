@@ -880,10 +880,10 @@ function matchScoreColor(rec: string) {
 }
 
 function ratingColor(n: number) {
-  if (n >= 80) return 'text-green-600 bg-green-50'
-  if (n >= 65) return 'text-blue-600 bg-blue-50'
-  if (n >= 50) return 'text-yellow-600 bg-yellow-50'
-  return 'text-gray-500 bg-gray-100'
+  if (n >= 80) return 'text-emerald-300 bg-emerald-900/40 border border-emerald-700'
+  if (n >= 65) return 'text-blue-300 bg-blue-900/40 border border-blue-700'
+  if (n >= 50) return 'text-yellow-300 bg-yellow-900/40 border border-yellow-700'
+  return 'text-slate-400 bg-slate-800/60 border border-slate-700'
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -1003,17 +1003,18 @@ export default function TacticLibraryPage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <BookOpen size={24} className="text-indigo-600" />
+          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+            <BookOpen size={24} style={{ color: '#6366f1' }} />
             FM26 Tactic Library
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm mt-1" style={{ color: '#4a5e80' }}>
             {TACTICS.length} proven community tactics with exact FM26 IP &amp; OOP instructions — sorted by downloads
           </p>
         </div>
         <button
           onClick={() => setShowMatchPanel(!showMatchPanel)}
-          className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition-colors"
+          className="flex items-center gap-2 text-white px-4 py-2 rounded-xl text-sm transition-all"
+          style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 0 16px rgba(99,102,241,0.3)' }}
         >
           <Cpu size={15} />
           Match to My Save
@@ -1021,23 +1022,24 @@ export default function TacticLibraryPage() {
       </div>
 
       {/* ── Upload My Tactic Panel ── */}
-      <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl p-5 mb-6 border border-gray-700">
+      <div className="rounded-xl p-5 mb-6" style={{ background: 'linear-gradient(135deg, #0d1628, #0a1020)', border: '1px solid rgba(99,102,241,0.2)' }}>
         <h2 className="text-white font-semibold text-sm mb-1 flex items-center gap-2">
-          <Upload size={15} className="text-green-400" />
+          <Upload size={15} style={{ color: '#10b981' }} />
           Analyse My Own Tactic
         </h2>
-        <p className="text-gray-400 text-xs mb-4">
+        <p className="text-xs mb-4" style={{ color: '#4a5e80' }}>
           Upload screenshots of your in-game IP and OOP tactic screens. The AI will read your instructions, rate your setup, and suggest improvements.
         </p>
 
         {/* Drop zone */}
         <div
-          className="border-2 border-dashed border-gray-600 rounded-lg p-4 text-center cursor-pointer hover:border-indigo-500 transition-colors mb-3"
+          className="rounded-xl p-4 text-center cursor-pointer transition-all mb-3"
+          style={{ border: '2px dashed rgba(99,102,241,0.3)' }}
           onClick={() => fileInputRef.current?.click()}
         >
-          <Upload size={20} className="text-gray-500 mx-auto mb-1" />
-          <p className="text-xs text-gray-400">Click to upload tactic screenshots (up to 4)</p>
-          <p className="text-xs text-gray-600 mt-0.5">Upload IP screen + OOP screen for best results</p>
+          <Upload size={20} style={{ color: '#4a5e80' }} className="mx-auto mb-1" />
+          <p className="text-xs" style={{ color: '#4a5e80' }}>Click to upload tactic screenshots (up to 4)</p>
+          <p className="text-xs mt-0.5" style={{ color: '#2d3f5a' }}>Upload IP screen + OOP screen for best results</p>
           <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
         </div>
 
@@ -1046,10 +1048,11 @@ export default function TacticLibraryPage() {
           <div className="flex gap-2 mb-3 flex-wrap">
             {uploadImages.map((img, i) => (
               <div key={i} className="relative">
-                <img src={img.preview} alt="tactic" className="h-16 w-24 object-cover rounded border border-gray-600" />
+                <img src={img.preview} alt="tactic" className="h-16 w-24 object-cover rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.1)' }} />
                 <button
                   onClick={() => removeImage(i)}
-                  className="absolute -top-1.5 -right-1.5 bg-red-600 rounded-full p-0.5 hover:bg-red-700"
+                  className="absolute -top-1.5 -right-1.5 rounded-full p-0.5"
+                  style={{ background: '#ef4444' }}
                 >
                   <X size={10} className="text-white" />
                 </button>
@@ -1061,18 +1064,19 @@ export default function TacticLibraryPage() {
         <button
           onClick={handleAnalyseMyTactic}
           disabled={!uploadImages.length || isAnalysing}
-          className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="text-white px-4 py-2 rounded-xl text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}
         >
           {isAnalysing ? 'Analysing tactic…' : 'Analyse My Tactic'}
         </button>
 
-        {analyseError && <p className="text-red-400 text-xs mt-2">{analyseError}</p>}
+        {analyseError && <p className="text-xs mt-2" style={{ color: '#fca5a5' }}>{analyseError}</p>}
 
         {/* My Tactic Result */}
         {myTacticResult && (
           <div className="mt-5 space-y-4">
-            <div className="border-t border-gray-700 pt-4">
-              {/* Rating + verdcit */}
+            <div className="pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+              {/* Rating + verdict */}
               <div className="flex items-start gap-4 mb-4">
                 <div className={`text-3xl font-black rounded-xl px-4 py-2 ${ratingColor(myTacticResult.analysis.overallRating)}`}>
                   {myTacticResult.analysis.overallRating}
@@ -1081,28 +1085,28 @@ export default function TacticLibraryPage() {
                 <div className="flex-1">
                   <div className="flex flex-wrap gap-1.5 mb-2">
                     {myTacticResult.analysis.styleTags?.map(t => (
-                      <span key={t} className="text-xs bg-indigo-900/40 text-indigo-300 border border-indigo-700 rounded-full px-2 py-0.5">{t}</span>
+                      <span key={t} className="text-xs rounded-full px-2 py-0.5" style={{ background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }}>{t}</span>
                     ))}
                   </div>
-                  <p className="text-sm text-gray-300">{myTacticResult.analysis.verdict}</p>
+                  <p className="text-sm" style={{ color: '#cbd5e1' }}>{myTacticResult.analysis.verdict}</p>
                 </div>
               </div>
 
               {/* Extracted instructions */}
               {myTacticResult.extraction && (
                 <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="bg-gray-800 rounded-lg p-3">
-                    <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Detected Formation</h4>
+                  <div className="rounded-xl p-3" style={{ background: '#080f1d' }}>
+                    <h4 className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#4a5e80' }}>Detected Formation</h4>
                     <p className="text-white font-mono text-sm">
                       IP: {String(myTacticResult.extraction.formation || '—')} / OOP: {String(myTacticResult.extraction.oopFormation || 'same')}
                     </p>
-                    <p className="text-gray-400 text-xs mt-1">Mentality: {String(myTacticResult.extraction.mentality || '—')}</p>
+                    <p className="text-xs mt-1" style={{ color: '#4a5e80' }}>Mentality: {String(myTacticResult.extraction.mentality || '—')}</p>
                   </div>
-                  <div className="bg-gray-800 rounded-lg p-3">
-                    <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Suitable For</h4>
+                  <div className="rounded-xl p-3" style={{ background: '#080f1d' }}>
+                    <h4 className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#4a5e80' }}>Suitable For</h4>
                     <div className="flex flex-wrap gap-1">
                       {myTacticResult.analysis.suitableFor?.map(l => (
-                        <span key={l} className="text-xs bg-orange-900/40 text-orange-300 border border-orange-700 rounded-full px-2 py-0.5">{l}</span>
+                        <span key={l} className="text-xs rounded-full px-2 py-0.5" style={{ background: 'rgba(245,158,11,0.12)', color: '#fcd34d', border: '1px solid rgba(245,158,11,0.2)' }}>{l}</span>
                       ))}
                     </div>
                   </div>
@@ -1111,19 +1115,19 @@ export default function TacticLibraryPage() {
 
               {/* Strengths / Weaknesses */}
               <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="bg-gray-800 rounded-lg p-3">
-                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Strengths</h4>
+                <div className="rounded-xl p-3" style={{ background: '#080f1d' }}>
+                  <h4 className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#4a5e80' }}>Strengths</h4>
                   <ul className="space-y-1">
                     {myTacticResult.analysis.strengths?.map(s => (
-                      <li key={s} className="text-xs text-gray-300 flex items-start gap-1.5"><span className="text-green-400">✓</span>{s}</li>
+                      <li key={s} className="text-xs flex items-start gap-1.5" style={{ color: '#cbd5e1' }}><span style={{ color: '#10b981' }}>✓</span>{s}</li>
                     ))}
                   </ul>
                 </div>
-                <div className="bg-gray-800 rounded-lg p-3">
-                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Weaknesses</h4>
+                <div className="rounded-xl p-3" style={{ background: '#080f1d' }}>
+                  <h4 className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#4a5e80' }}>Weaknesses</h4>
                   <ul className="space-y-1">
                     {myTacticResult.analysis.weaknesses?.map(w => (
-                      <li key={w} className="text-xs text-gray-300 flex items-start gap-1.5"><span className="text-red-400">✗</span>{w}</li>
+                      <li key={w} className="text-xs flex items-start gap-1.5" style={{ color: '#cbd5e1' }}><span style={{ color: '#ef4444' }}>✗</span>{w}</li>
                     ))}
                   </ul>
                 </div>
@@ -1131,22 +1135,22 @@ export default function TacticLibraryPage() {
 
               {/* Improvements */}
               {myTacticResult.analysis.improvements?.length > 0 && (
-                <div className="bg-gray-800 rounded-lg p-3 mb-3">
-                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
-                    <TrendingUp size={12} className="text-indigo-400" /> Suggested Improvements
+                <div className="rounded-xl p-3 mb-3" style={{ background: '#080f1d' }}>
+                  <h4 className="text-xs font-semibold uppercase tracking-wide mb-3 flex items-center gap-1.5" style={{ color: '#4a5e80' }}>
+                    <TrendingUp size={12} style={{ color: '#6366f1' }} /> Suggested Improvements
                   </h4>
                   <div className="space-y-3">
                     {myTacticResult.analysis.improvements.map((imp, i) => (
-                      <div key={i} className="border-l-2 border-indigo-600 pl-3">
+                      <div key={i} className="pl-3" style={{ borderLeft: '2px solid #6366f1' }}>
                         <div className="flex items-center gap-2 mb-0.5">
                           <span className="text-xs font-semibold text-white">{imp.instruction}</span>
                           {imp.currentSetting && (
-                            <span className="text-xs text-gray-500">
-                              {imp.currentSetting} → <span className="text-indigo-300 font-medium">{imp.suggestedSetting}</span>
+                            <span className="text-xs" style={{ color: '#4a5e80' }}>
+                              {imp.currentSetting} → <span style={{ color: '#a5b4fc' }} className="font-medium">{imp.suggestedSetting}</span>
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-400">{imp.reason}</p>
+                        <p className="text-xs" style={{ color: '#4a5e80' }}>{imp.reason}</p>
                       </div>
                     ))}
                   </div>
@@ -1155,9 +1159,9 @@ export default function TacticLibraryPage() {
 
               {/* Similar tactics */}
               {myTacticResult.analysis.similarCommunityTactics?.length > 0 && (
-                <div className="bg-gray-800 rounded-lg p-3">
-                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Similar Community Tactics</h4>
-                  <p className="text-xs text-gray-300">{myTacticResult.analysis.similarCommunityTactics.join(', ')}</p>
+                <div className="rounded-xl p-3" style={{ background: '#080f1d' }}>
+                  <h4 className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: '#4a5e80' }}>Similar Community Tactics</h4>
+                  <p className="text-xs" style={{ color: '#cbd5e1' }}>{myTacticResult.analysis.similarCommunityTactics.join(', ')}</p>
                 </div>
               )}
             </div>
@@ -1167,16 +1171,17 @@ export default function TacticLibraryPage() {
 
       {/* ── AI Match Panel ── */}
       {showMatchPanel && (
-        <div className="bg-gray-900 rounded-xl p-5 mb-6 border border-indigo-700">
+        <div className="rounded-xl p-5 mb-6" style={{ background: '#0d1628', border: '1px solid rgba(99,102,241,0.3)' }}>
           <h2 className="text-white font-semibold text-sm mb-3 flex items-center gap-2">
-            <Cpu size={15} className="text-indigo-400" />
+            <Cpu size={15} style={{ color: '#6366f1' }} />
             AI Tactic Match — Score against your save
           </h2>
           <div className="flex gap-3">
             <select
               value={selectedSave}
               onChange={e => setSelectedSave(e.target.value)}
-              className="flex-1 bg-gray-800 text-white text-sm rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:border-indigo-500"
+              className="flex-1 text-white text-sm rounded-xl px-3 py-2 focus:outline-none"
+              style={{ background: '#080f1d', border: '1px solid rgba(255,255,255,0.1)' }}
             >
               <option value="">Select a save…</option>
               {saves.map(s => (
@@ -1186,14 +1191,15 @@ export default function TacticLibraryPage() {
             <button
               onClick={handleMatchToSave}
               disabled={!selectedSave || isMatching}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+              className="text-white px-4 py-2 rounded-xl text-sm transition-all disabled:opacity-50"
+              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
             >
               {isMatching ? 'Analysing…' : 'Analyse'}
             </button>
           </div>
-          {matchError && <p className="text-red-400 text-xs mt-2">{matchError}</p>}
+          {matchError && <p className="text-xs mt-2" style={{ color: '#fca5a5' }}>{matchError}</p>}
           {matchResults.length > 0 && (
-            <p className="text-green-400 text-xs mt-3 flex items-center gap-1">
+            <p className="text-xs mt-3 flex items-center gap-1" style={{ color: '#6ee7b7' }}>
               <CheckCircle2 size={13} />
               Match complete — scores shown on each tactic below
             </p>
@@ -1204,33 +1210,36 @@ export default function TacticLibraryPage() {
       {/* ── Filters + Sort ── */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <div className="flex items-center gap-2">
-          <Filter size={14} className="text-gray-500" />
-          <span className="text-xs text-gray-500 font-medium">Level:</span>
+          <Filter size={14} style={{ color: '#4a5e80' }} />
+          <span className="text-xs font-medium" style={{ color: '#4a5e80' }}>Level:</span>
           <select
             value={leagueFilter}
             onChange={e => setLeagueFilter(e.target.value)}
-            className="bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-xs text-gray-700 focus:outline-none focus:border-indigo-400"
+            className="rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none"
+            style={{ background: '#0d1628', border: '1px solid rgba(255,255,255,0.1)' }}
           >
             {leagueLevels.map(l => <option key={l}>{l}</option>)}
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500 font-medium">Style:</span>
+          <span className="text-xs font-medium" style={{ color: '#4a5e80' }}>Style:</span>
           <select
             value={styleFilter}
             onChange={e => setStyleFilter(e.target.value)}
-            className="bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-xs text-gray-700 focus:outline-none focus:border-indigo-400"
+            className="rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none"
+            style={{ background: '#0d1628', border: '1px solid rgba(255,255,255,0.1)' }}
           >
             {styles.map(s => <option key={s}>{s}</option>)}
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <ArrowUpDown size={13} className="text-gray-500" />
-          <span className="text-xs text-gray-500 font-medium">Sort:</span>
+          <ArrowUpDown size={13} style={{ color: '#4a5e80' }} />
+          <span className="text-xs font-medium" style={{ color: '#4a5e80' }}>Sort:</span>
           <select
             value={sortBy}
             onChange={e => setSortBy(e.target.value as 'downloads' | 'name')}
-            className="bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-xs text-gray-700 focus:outline-none focus:border-indigo-400"
+            className="rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none"
+            style={{ background: '#0d1628', border: '1px solid rgba(255,255,255,0.1)' }}
           >
             <option value="downloads">Most Downloaded</option>
             <option value="name">Name A–Z</option>
@@ -1238,12 +1247,16 @@ export default function TacticLibraryPage() {
         </div>
         <button
           onClick={() => setShowLowerLeagueOnly(!showLowerLeagueOnly)}
-          className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-colors ${showLowerLeagueOnly ? 'bg-orange-600 text-white border-orange-600' : 'bg-white text-gray-600 border-gray-300 hover:border-orange-400'}`}
+          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl transition-colors"
+          style={showLowerLeagueOnly
+            ? { background: 'rgba(249,115,22,0.2)', color: '#fb923c', border: '1px solid rgba(249,115,22,0.4)' }
+            : { background: 'transparent', color: '#4a5e80', border: '1px solid rgba(255,255,255,0.08)' }
+          }
         >
           <Star size={11} />
           Lower League Focus
         </button>
-        <span className="text-xs text-gray-400 ml-auto">
+        <span className="text-xs ml-auto" style={{ color: '#4a5e80' }}>
           {filtered.length} tactic{filtered.length !== 1 ? 's' : ''}
         </span>
       </div>
@@ -1255,66 +1268,71 @@ export default function TacticLibraryPage() {
           const matchResult = getMatchResult(tactic.id)
 
           return (
-            <div key={tactic.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div key={tactic.id} className="rounded-xl overflow-hidden" style={{ background: '#0d1628', border: '1px solid rgba(255,255,255,0.06)' }}>
               <div
-                className="px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                className="px-5 py-4 cursor-pointer transition-colors"
+                style={{ background: 'transparent' }}
                 onClick={() => setExpandedId(isExpanded ? null : tactic.id)}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-semibold text-gray-900 text-sm">{tactic.name}</h3>
-                      <span className="text-xs bg-indigo-100 text-indigo-700 rounded-full px-2 py-0.5 font-mono">{tactic.formation}</span>
-                      <span className="text-xs bg-gray-100 text-gray-600 rounded-full px-2 py-0.5">OOP: {tactic.oopFormation}</span>
-                      <span className="text-xs bg-purple-100 text-purple-700 rounded-full px-2 py-0.5">{tactic.mentality}</span>
+                      <h3 className="font-semibold text-white text-sm">{tactic.name}</h3>
+                      <span className="text-xs rounded-full px-2 py-0.5 font-mono" style={{ background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.25)' }}>{tactic.formation}</span>
+                      <span className="text-xs rounded-full px-2 py-0.5" style={{ background: 'rgba(255,255,255,0.06)', color: '#64748b' }}>OOP: {tactic.oopFormation}</span>
+                      <span className="text-xs rounded-full px-2 py-0.5" style={{ background: 'rgba(139,92,246,0.12)', color: '#c4b5fd', border: '1px solid rgba(139,92,246,0.2)' }}>{tactic.mentality}</span>
                       {tactic.lowerLeagueFocused && (
-                        <span className="text-xs bg-orange-100 text-orange-700 rounded-full px-2 py-0.5 border border-orange-200 flex items-center gap-1">
+                        <span className="text-xs rounded-full px-2 py-0.5 flex items-center gap-1" style={{ background: 'rgba(249,115,22,0.12)', color: '#fb923c', border: '1px solid rgba(249,115,22,0.2)' }}>
                           <Star size={9} /> Lower League
                         </span>
                       )}
                     </div>
                     <div className="flex items-center gap-3 mt-1 flex-wrap">
-                      <span className="text-xs text-gray-500">by <span className="font-medium text-gray-700">{tactic.creator}</span></span>
+                      <span className="text-xs" style={{ color: '#4a5e80' }}>by <span className="font-medium" style={{ color: '#94a3b8' }}>{tactic.creator}</span></span>
                       <a
                         href={tactic.sourceUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-xs text-indigo-500 hover:text-indigo-700 flex items-center gap-0.5"
+                        className="text-xs flex items-center gap-0.5 transition-colors"
+                        style={{ color: '#6366f1' }}
                         onClick={e => e.stopPropagation()}
                       >
                         {tactic.source} <ExternalLink size={10} />
                       </a>
                       {tactic.downloads > 0 && (
-                        <span className="text-xs text-gray-500 flex items-center gap-1">
-                          <TrendingUp size={10} className="text-green-500" />
-                          <span className="font-medium text-green-600">{formatDownloads(tactic.downloads)}</span> downloads
+                        <span className="text-xs flex items-center gap-1" style={{ color: '#4a5e80' }}>
+                          <TrendingUp size={10} style={{ color: '#10b981' }} />
+                          <span className="font-medium" style={{ color: '#10b981' }}>{formatDownloads(tactic.downloads)}</span> downloads
                         </span>
                       )}
-                      <span className="text-xs text-gray-400">{tactic.leagueExamples}</span>
+                      <span className="text-xs" style={{ color: '#3d4f70' }}>{tactic.leagueExamples}</span>
                     </div>
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {tactic.style.map(s => (
-                        <span key={s} className="text-xs bg-green-50 text-green-700 rounded-full px-2 py-0.5 border border-green-200">{s}</span>
+                        <span key={s} className="text-xs rounded-full px-2 py-0.5" style={{ background: 'rgba(16,185,129,0.1)', color: '#34d399', border: '1px solid rgba(16,185,129,0.2)' }}>{s}</span>
                       ))}
                     </div>
                   </div>
                   <div className="flex items-center gap-3 ml-4 shrink-0">
                     {matchResult && (
-                      <div className={`text-xs px-3 py-1.5 rounded-lg font-medium text-center min-w-[72px] ${matchScoreColor(matchResult.recommendation)}`}>
+                      <div className={`text-xs px-3 py-1.5 rounded-xl font-medium text-center min-w-[72px] ${matchScoreColor(matchResult.recommendation)}`}>
                         <div className="text-[10px]">{matchResult.recommendation}</div>
                         <div className="font-black text-xl leading-tight">{matchResult.matchScore}%</div>
                       </div>
                     )}
-                    {isExpanded ? <ChevronUp size={18} className="text-gray-400" /> : <ChevronDown size={18} className="text-gray-400" />}
+                    {isExpanded
+                      ? <ChevronUp size={18} style={{ color: '#4a5e80' }} />
+                      : <ChevronDown size={18} style={{ color: '#4a5e80' }} />
+                    }
                   </div>
                 </div>
               </div>
 
               {/* Expanded */}
               {isExpanded && (
-                <div className="border-t border-gray-100 px-5 py-5 bg-gray-50">
+                <div className="px-5 py-5" style={{ background: '#080f1d', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                   {matchResult && (
-                    <div className={`rounded-lg p-4 mb-5 ${matchScoreColor(matchResult.recommendation)}`}>
+                    <div className={`rounded-xl p-4 mb-5 ${matchScoreColor(matchResult.recommendation)}`}>
                       <div className="flex items-center gap-2 mb-1">
                         <Cpu size={13} />
                         <span className="text-xs font-semibold uppercase tracking-wide">AI Analysis for your save</span>
@@ -1323,55 +1341,55 @@ export default function TacticLibraryPage() {
                     </div>
                   )}
 
-                  <p className="text-sm text-gray-700 mb-5">{tactic.description}</p>
+                  <p className="text-sm mb-5" style={{ color: '#94a3b8' }}>{tactic.description}</p>
 
                   <div className="grid grid-cols-2 gap-4 mb-5">
                     <div>
-                      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Strengths</h4>
+                      <h4 className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#4a5e80' }}>Strengths</h4>
                       <ul className="space-y-1">
                         {tactic.strengths.map(s => (
-                          <li key={s} className="text-xs text-gray-700 flex items-start gap-1.5"><span className="text-green-500 mt-0.5">✓</span>{s}</li>
+                          <li key={s} className="text-xs flex items-start gap-1.5" style={{ color: '#94a3b8' }}><span style={{ color: '#10b981' }} className="mt-0.5">✓</span>{s}</li>
                         ))}
                       </ul>
                     </div>
                     <div>
-                      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Weaknesses</h4>
+                      <h4 className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#4a5e80' }}>Weaknesses</h4>
                       <ul className="space-y-1">
                         {tactic.weaknesses.map(w => (
-                          <li key={w} className="text-xs text-gray-700 flex items-start gap-1.5"><span className="text-red-400 mt-0.5">✗</span>{w}</li>
+                          <li key={w} className="text-xs flex items-start gap-1.5" style={{ color: '#94a3b8' }}><span style={{ color: '#ef4444' }} className="mt-0.5">✗</span>{w}</li>
                         ))}
                       </ul>
                     </div>
                   </div>
 
                   {tactic.keyRoles && (
-                    <div className="bg-indigo-50 rounded-lg px-4 py-3 mb-5 border border-indigo-100">
-                      <h4 className="text-xs font-semibold text-indigo-700 uppercase tracking-wide mb-1 flex items-center gap-1.5">
+                    <div className="rounded-xl px-4 py-3 mb-5" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}>
+                      <h4 className="text-xs font-semibold uppercase tracking-wide mb-1 flex items-center gap-1.5" style={{ color: '#a5b4fc' }}>
                         <Target size={12} /> Key Roles
                       </h4>
-                      <p className="text-xs text-indigo-800">{tactic.keyRoles}</p>
+                      <p className="text-xs" style={{ color: '#c7d2fe' }}>{tactic.keyRoles}</p>
                     </div>
                   )}
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 pb-1 border-b border-gray-200">In Possession (IP)</h4>
+                      <h4 className="text-xs font-semibold uppercase tracking-wide mb-3 pb-1" style={{ color: '#4a5e80', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>In Possession (IP)</h4>
                       <div className="space-y-1.5">
                         {Object.entries(tactic.ipInstructions).map(([k, v]) => (
                           <div key={k} className="flex justify-between items-center text-xs">
-                            <span className="text-gray-500">{k}</span>
-                            <span className="font-medium text-gray-800 bg-white rounded px-2 py-0.5 border border-gray-200">{v}</span>
+                            <span style={{ color: '#4a5e80' }}>{k}</span>
+                            <span className="font-medium rounded-lg px-2 py-0.5" style={{ background: 'rgba(255,255,255,0.06)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.06)' }}>{v}</span>
                           </div>
                         ))}
                       </div>
                     </div>
                     <div>
-                      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 pb-1 border-b border-gray-200">Out of Possession (OOP)</h4>
+                      <h4 className="text-xs font-semibold uppercase tracking-wide mb-3 pb-1" style={{ color: '#4a5e80', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Out of Possession (OOP)</h4>
                       <div className="space-y-1.5">
                         {Object.entries(tactic.oopInstructions).map(([k, v]) => (
                           <div key={k} className="flex justify-between items-center text-xs">
-                            <span className="text-gray-500">{k}</span>
-                            <span className="font-medium text-gray-800 bg-white rounded px-2 py-0.5 border border-gray-200">{v}</span>
+                            <span style={{ color: '#4a5e80' }}>{k}</span>
+                            <span className="font-medium rounded-lg px-2 py-0.5" style={{ background: 'rgba(255,255,255,0.06)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.06)' }}>{v}</span>
                           </div>
                         ))}
                       </div>
@@ -1384,11 +1402,11 @@ export default function TacticLibraryPage() {
         })}
 
         {filtered.length === 0 && (
-          <div className="text-center text-gray-400 py-16">No tactics match these filters. Try broadening your search.</div>
+          <div className="text-center py-16" style={{ color: '#4a5e80' }}>No tactics match these filters. Try broadening your search.</div>
         )}
       </div>
 
-      <p className="text-xs text-gray-400 text-center mt-8">
+      <p className="text-xs text-center mt-8" style={{ color: '#2d3f5a' }}>
         Download counts sourced from FMScout. IP/OOP instructions curated from community descriptions using exact FM26 instruction names.
       </p>
     </div>
