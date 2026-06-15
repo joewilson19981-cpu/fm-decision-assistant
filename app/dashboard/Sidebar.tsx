@@ -3,15 +3,15 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  LayoutDashboard, Database, Calendar, Camera,
+  LayoutDashboard, Database, Camera,
   BarChart2, Users, Star, ClipboardList, BookOpen, LogOut,
-  Layers, GraduationCap, ArrowLeftRight, Target,
+  Layers, GraduationCap, ArrowLeftRight, Target, Zap, MessageSquare,
 } from 'lucide-react'
 
 const NAV = [
+  { href: '/dashboard/assistant', icon: MessageSquare, label: 'Assistant', highlight: true },
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', exact: true },
   { href: '/dashboard/saves', icon: Database, label: 'Saves' },
-  { href: '/dashboard/seasons', icon: Calendar, label: 'Seasons' },
   { href: '/dashboard/checkpoints', icon: Camera, label: 'Checkpoints' },
   { href: '/dashboard/compare', icon: BarChart2, label: 'Compare' },
   { href: '/dashboard/players', icon: Users, label: 'Players' },
@@ -20,6 +20,7 @@ const NAV = [
 ]
 
 const TOOLS = [
+  { href: '/dashboard/game-update', icon: Zap, label: 'Game Update' },
   { href: '/dashboard/tactic-library', icon: BookOpen, label: 'Tactic Library' },
   { href: '/dashboard/set-pieces', icon: Target, label: 'Set Pieces' },
   { href: '/dashboard/squad-depth', icon: Layers, label: 'Squad Depth' },
@@ -56,6 +57,7 @@ export default function Sidebar({ email }: { email: string }) {
         <div className="px-3 space-y-0.5">
           {NAV.map(item => {
             const on = active(item.href, item.exact)
+            const isHighlight = (item as any).highlight && !on
             return (
               <Link
                 key={item.href}
@@ -63,10 +65,12 @@ export default function Sidebar({ email }: { email: string }) {
                 className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-colors duration-100"
                 style={on
                   ? { color: '#ffffff', background: 'rgba(255,255,255,0.06)' }
+                  : isHighlight
+                  ? { color: '#ffffff', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }
                   : { color: '#555555' }
                 }
               >
-                <item.icon size={14} className="flex-shrink-0" strokeWidth={on ? 2.5 : 2} />
+                <item.icon size={14} className="flex-shrink-0" strokeWidth={on || isHighlight ? 2.5 : 2} />
                 {item.label}
               </Link>
             )
@@ -79,6 +83,7 @@ export default function Sidebar({ email }: { email: string }) {
           <p className="px-2.5 pb-1.5 text-[10px] font-medium uppercase tracking-widest" style={{ color: '#333333' }}>Tools</p>
           {TOOLS.map(item => {
             const on = active(item.href)
+            const isHighlight = (item as any).highlight && !on
             return (
               <Link
                 key={item.href}
@@ -86,10 +91,12 @@ export default function Sidebar({ email }: { email: string }) {
                 className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-colors duration-100"
                 style={on
                   ? { color: '#ffffff', background: 'rgba(255,255,255,0.06)' }
+                  : isHighlight
+                  ? { color: '#ffffff', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }
                   : { color: '#555555' }
                 }
               >
-                <item.icon size={14} className="flex-shrink-0" strokeWidth={on ? 2.5 : 2} />
+                <item.icon size={14} className="flex-shrink-0" strokeWidth={on || isHighlight ? 2.5 : 2} />
                 {item.label}
               </Link>
             )

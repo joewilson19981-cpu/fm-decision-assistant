@@ -1,0 +1,490 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { createClient } from '@/lib/supabase/server'
+
+// ── Vision extraction (same model as analyze-screenshot) ─────────────────────
+
+const EXTRACT_PROMPT = `You are an expert at reading Football Manager screenshots.
+Extract ALL visible data and return ONLY valid JSON:
+{
+  "screenshotType": "league_table | team_stats | player_stats | tactic | finances | medical | squad | youth | other",
+  "gameDate": "YYYY-MM-DD or null",
+  "transferWindow": "open | closed | null",
+  "leagueName": "string or null",
+  "clubName": "string or null",
+  "leagueTable": [{ "position": 1, "teamName": "...", "played": 0, "wins": 0, "draws": 0, "losses": 0, "goalsFor": 0, "goalsAgainst": 0, "goalDiff": 0, "points": 0, "form": null, "isYourTeam": false }],
+  "teamStats": { "leaguePosition": null, "played": null, "wins": null, "draws": null, "losses": null, "points": null, "goalsFor": null, "goalsAgainst": null, "goalDiff": null, "cleanSheets": null, "xg": null, "xga": null, "possession": null, "shotsPerGame": null, "passCompletion": null, "clearCutChancesFor": null, "clearCutChancesAgainst": null, "setPieceGoalsFor": null, "setPieceGoalsAgainst": null },
+  "playerStats": [{ "name": "...", "position": "...", "age": null, "appearances": null, "goals": null, "assists": null, "cleanSheets": null, "avgRating": null, "yellowCards": null, "redCards": null, "wage": null, "contractExpiry": null, "morale": null }],
+  "tactic": { "formation": null, "mentality": null },
+  "finances": { "balance": null, "profitLoss": null, "transferBudget": null, "wageBudget": null, "wageSpend": null, "remainingWageBudget": null },
+  "medical": { "currentInjuries": null, "totalInjuriesThisSeason": null, "overallSquadCondition": null, "notes": null }
+}
+Convert financials to raw numbers (£2.5M → 2500000). Dates to YYYY-MM-DD.
+For league tables, set isYourTeam: true for the highlighted/bold team row.`
+
+async function analyzeImage(base64: string, mimeType: string): Promise<any> {
+  let response: Response | null = null
+  for (let attempt = 0; attempt < 3; attempt++) {
+    response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${process.env.GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+        messages: [{ role: 'user', content: [
+          { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64}` } },
+          { type: 'text', text: EXTRACT_PROMPT },
+        ]}],
+        max_tokens: 4096, temperature: 0.1,
+      }),
+    })
+    if (response.status !== 429) break
+    const e = await response.json().catch(() => ({}))
+    const m = (e?.error?.message ?? '').match(/try again in ([\d.]+)s/)
+    await new Promise(r => setTimeout(r, m ? Math.ceil(parseFloat(m[1]) * 1000) + 500 : 8000))
+  }
+  if (!response?.ok) throw new Error(`Vision API error ${response?.status}`)
+  const result = await response.json()
+  const text = result.choices[0]?.message?.content ?? ''
+  return JSON.parse(text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim())
+}
+
+function mergeExtractions(extractions: any[]): any {
+  const merged: any = { gameDate: null, transferWindow: null, leagueName: null, clubName: null, leagueTable: [], teamStats: {}, playerStats: [], tactic: {}, finances: {}, medical: {} }
+  for (const ex of extractions) {
+    if (!ex) continue
+    if (ex.gameDate && !merged.gameDate) merged.gameDate = ex.gameDate
+    if (ex.transferWindow && !merged.transferWindow) merged.transferWindow = ex.transferWindow
+    if (ex.leagueName && !merged.leagueName) merged.leagueName = ex.leagueName
+    if (ex.clubName && !merged.clubName) merged.clubName = ex.clubName
+    if ((ex.leagueTable?.length || 0) > merged.leagueTable.length) merged.leagueTable = ex.leagueTable
+    if (ex.teamStats) for (const [k, v] of Object.entries(ex.teamStats)) { if (v != null && merged.teamStats[k] == null) merged.teamStats[k] = v }
+    if (ex.playerStats?.length > 0) {
+      for (const p of ex.playerStats) {
+        if (!p.name?.trim()) continue
+        const existing = merged.playerStats.find((x: any) => x.name.toLowerCase().trim() === p.name.toLowerCase().trim())
+        if (existing) { for (const [k, v] of Object.entries(p)) { if (v != null && existing[k] == null) existing[k] = v } }
+        else merged.playerStats.push({ ...p })
+      }
+    }
+    if (ex.tactic?.formation && !merged.tactic.formation) merged.tactic.formation = ex.tactic.formation
+    if (ex.tactic?.mentality && !merged.tactic.mentality) merged.tactic.mentality = ex.tactic.mentality
+    if (ex.finances) for (const [k, v] of Object.entries(ex.finances)) { if (v != null && merged.finances[k] == null) merged.finances[k] = v }
+    if (ex.medical) {
+      if (ex.medical.currentInjuries != null && merged.medical.currentInjuries == null) merged.medical.currentInjuries = ex.medical.currentInjuries
+      if (ex.medical.totalInjuriesThisSeason != null && merged.medical.totalInjuriesThisSeason == null) merged.medical.totalInjuriesThisSeason = ex.medical.totalInjuriesThisSeason
+      if (ex.medical.overallSquadCondition && !merged.medical.overallSquadCondition) merged.medical.overallSquadCondition = ex.medical.overallSquadCondition
+      if (ex.medical.notes && !merged.medical.notes) merged.medical.notes = ex.medical.notes
+    }
+  }
+  return merged
+}
+
+// ── Load full save context for system prompt ──────────────────────────────────
+
+async function loadSaveContext(saveId: string, userId: string) {
+  const save = await prisma.save.findFirst({
+    where: { id: saveId, userId },
+    include: {
+      seasons: {
+        where: { status: 'active' },
+        take: 1,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          checkpoints: {
+            orderBy: { gamesPlayed: 'desc' },
+            take: 3,
+            include: {
+              teamStats: true,
+              financeSnapshot: true,
+              playerStats: { include: { player: true }, take: 20, orderBy: { goals: 'desc' } },
+              leagueTableSnapshots: { where: { isYourTeam: true }, take: 1 },
+            },
+          },
+        },
+      },
+      youthPlayers: { take: 10 },
+    },
+  })
+  return save
+}
+
+function buildSystemPrompt(save: any, userName: string): string {
+  const season = save?.seasons?.[0]
+  const latestCp = season?.checkpoints?.[0]
+  const ts = latestCp?.teamStats
+  const fin = latestCp?.financeSnapshot
+  const topScorers = latestCp?.playerStats
+    ?.filter((p: any) => p.goals != null && p.goals > 0)
+    ?.slice(0, 3)
+    ?.map((p: any) => `${p.player.name} (${p.goals}G${p.assists ? ` ${p.assists}A` : ''})`)
+    ?.join(', ')
+  const youthNames = save?.youthPlayers?.map((yp: any) => `${yp.name} (${yp.playerType})`).join(', ')
+  const cpSummaries = season?.checkpoints?.map((cp: any) =>
+    `${cp.gamesPlayed} games: ${cp.teamStats?.leaguePosition != null ? `${cp.teamStats.leaguePosition}th` : '?'}, ${cp.teamStats?.points ?? '?'}pts`
+  ).join(' → ')
+
+  return `You are FM Assistant — a personal Football Manager analyst for ${userName || 'the manager'}.
+
+${save ? `SAVE CONTEXT:
+- Club: ${save.currentClub || save.name}
+- League: ${season?.leagueName || 'Unknown'}, Season ${season?.seasonLabel || ''}
+- Current position: ${ts?.leaguePosition ?? '?'}th with ${ts?.wins ?? '?'}W ${ts?.draws ?? '?'}D ${ts?.losses ?? '?'}L, ${ts?.points ?? '?'} pts
+- Goals: ${ts?.goalsFor ?? '?'} scored, ${ts?.goalsAgainst ?? '?'} conceded
+${ts?.xg != null ? `- xG: ${ts.xg} | xGA: ${ts.xga}` : ''}
+${ts?.possession != null ? `- Possession: ${ts.possession}%` : ''}
+${topScorers ? `- Top scorers: ${topScorers}` : ''}
+${fin?.transferBudget != null ? `- Transfer budget: £${(fin.transferBudget / 1000000).toFixed(1)}m` : ''}
+${fin?.remainingWageBudget != null ? `- Wage budget remaining: £${(fin.remainingWageBudget / 1000).toFixed(0)}k/wk` : ''}
+${cpSummaries ? `- Season checkpoints: ${cpSummaries}` : ''}
+${youthNames ? `- Youth/loan players being tracked: ${youthNames}` : ''}
+- Games played so far this season: ${latestCp?.gamesPlayed ?? 0}` : `No save loaded yet — help the user set up their first save.`}
+
+YOUR PERSONALITY:
+- Direct, knowledgeable, like a trusted analyst who knows their save inside out
+- Reference their actual stats, players, and league position — not generic advice
+- Concise but insightful — don't pad responses
+- When you get something wrong or uncertain, say so
+
+WHAT YOU CAN DO:
+1. SETUP: If no save exists or user says "new save", guide them: ask for squad screenshot first, then finances, then a couple of text questions (season goal, board expectation)
+2. CHECKPOINT UPDATES: When user sends screenshots (at 10/23/35/46 games), process them all, then respond with a checklist:
+   ✅ [what was found] — [one-line insight]
+   ❌ [what's missing] — ask specifically for that screen
+   At 23 and 46 games only, also ask for youth/loan player screens
+3. QUESTIONS: Answer anything about their save — tactics, form, who to sign, transfer decisions
+4. ANALYSIS: Spot patterns in their data, flag concerns proactively
+
+CHECKLIST FORMAT (use when screenshots were processed):
+After showing found/missing items, add 2-3 lines of actual analysis — not generic, based on their numbers.
+
+SETUP FORMAT:
+Step 1: "Send me your squad overview screenshot"
+Step 2: "Now send finances"
+Step 3: Ask season objective and board expectation as text questions
+Step 4: Confirm: "Setting up [Club] in [League]... done. [X] players imported."
+
+Keep responses tight. No bullet points for everything — mix in natural sentences.`
+}
+
+// ── Save extracted data to checkpoint ────────────────────────────────────────
+
+async function saveToCheckpoint(saveId: string, merged: any, gamesPlayed: number, userId: string) {
+  const num = (v: any) => (v != null && !isNaN(Number(v)) ? Number(v) : null)
+  const saved: string[] = []
+
+  // Find or create season + checkpoint
+  let season = await prisma.season.findFirst({
+    where: { saveId, status: 'active' },
+    include: { checkpoints: { orderBy: { gamesPlayed: 'asc' } } },
+  })
+
+  if (!season) {
+    season = await prisma.season.create({
+      data: {
+        saveId,
+        seasonLabel: `${new Date().getFullYear()}/${new Date().getFullYear() + 1}`,
+        leagueName: merged.leagueName || 'Unknown League',
+        clubName: merged.clubName || 'Unknown',
+        status: 'active',
+        checkpoints: {
+          create: [
+            { checkpointType: 'pre_season', gamesPlayed: 0, status: 'draft' },
+            { checkpointType: 'game_10', gamesPlayed: 10, status: 'draft' },
+            { checkpointType: 'game_23', gamesPlayed: 23, status: 'draft' },
+            { checkpointType: 'game_35', gamesPlayed: 35, status: 'draft' },
+            { checkpointType: 'game_46', gamesPlayed: 46, status: 'draft' },
+          ],
+        },
+      },
+      include: { checkpoints: { orderBy: { gamesPlayed: 'asc' } } },
+    })
+  }
+
+  const MILESTONES = [0, 10, 23, 35, 46]
+  const closest = MILESTONES.reduce((p, c) => Math.abs(c - gamesPlayed) < Math.abs(p - gamesPlayed) ? c : p)
+  let checkpoint = (season as any).checkpoints.find((cp: any) => cp.gamesPlayed === closest)
+
+  if (!checkpoint) {
+    checkpoint = await prisma.checkpoint.create({
+      data: { seasonId: season.id, checkpointType: `game_${closest}`, gamesPlayed: closest, status: 'draft' },
+    })
+  }
+
+  const checkpointId = checkpoint.id
+
+  await prisma.$transaction(async (tx) => {
+    // Checkpoint meta
+    const cpUpdate: any = { gamesPlayed, status: 'confirmed' }
+    if (merged.gameDate) {
+      cpUpdate.inGameDate = new Date(merged.gameDate)
+      const month = new Date(merged.gameDate).getMonth()
+      const PHASES = ['January','February','March','April','May','End of season','Pre-season','August','September','October','November','December']
+      cpUpdate.calendarPhase = PHASES[month] ?? null
+    }
+    if (merged.transferWindow) cpUpdate.transferWindowStatus = merged.transferWindow === 'open' ? 'Open' : 'Closed'
+    await tx.checkpoint.update({ where: { id: checkpointId }, data: cpUpdate })
+
+    // Team stats
+    const ts = merged.teamStats
+    if (Object.values(ts).some(v => v != null)) {
+      await tx.teamCheckpointStats.upsert({
+        where: { checkpointId },
+        create: { checkpointId, leaguePosition: num(ts.leaguePosition), played: num(ts.played), points: num(ts.points), wins: num(ts.wins), draws: num(ts.draws), losses: num(ts.losses), goalsFor: num(ts.goalsFor), goalsAgainst: num(ts.goalsAgainst), goalDiff: num(ts.goalDiff), xg: num(ts.xg), xga: num(ts.xga), cleanSheets: num(ts.cleanSheets), shotsPerGame: num(ts.shotsPerGame), possession: num(ts.possession), passCompletion: num(ts.passCompletion), clearCutChancesFor: num(ts.clearCutChancesFor), clearCutChancesAgainst: num(ts.clearCutChancesAgainst), setPieceGoalsFor: num(ts.setPieceGoalsFor), setPieceGoalsAgainst: num(ts.setPieceGoalsAgainst) },
+        update: { leaguePosition: num(ts.leaguePosition), played: num(ts.played), points: num(ts.points), wins: num(ts.wins), draws: num(ts.draws), losses: num(ts.losses), goalsFor: num(ts.goalsFor), goalsAgainst: num(ts.goalsAgainst), goalDiff: num(ts.goalDiff), xg: num(ts.xg), xga: num(ts.xga), cleanSheets: num(ts.cleanSheets), shotsPerGame: num(ts.shotsPerGame), possession: num(ts.possession), passCompletion: num(ts.passCompletion), clearCutChancesFor: num(ts.clearCutChancesFor), clearCutChancesAgainst: num(ts.clearCutChancesAgainst), setPieceGoalsFor: num(ts.setPieceGoalsFor), setPieceGoalsAgainst: num(ts.setPieceGoalsAgainst) },
+      })
+      saved.push('team_stats')
+    }
+
+    // League table
+    if (merged.leagueTable?.length > 0) {
+      await tx.leagueTableSnapshot.deleteMany({ where: { checkpointId } })
+      await tx.leagueTableSnapshot.createMany({
+        data: merged.leagueTable.map((row: any) => ({ checkpointId, teamName: row.teamName, position: Number(row.position) || 0, played: Number(row.played) || 0, wins: Number(row.wins) || 0, draws: Number(row.draws) || 0, losses: Number(row.losses) || 0, goalsFor: Number(row.goalsFor) || 0, goalsAgainst: Number(row.goalsAgainst) || 0, goalDiff: Number(row.goalDiff) || 0, points: Number(row.points) || 0, form: row.form || null, isYourTeam: !!row.isYourTeam, confirmed: true })),
+      })
+      saved.push('league_table')
+    }
+
+    // Tactic
+    if (merged.tactic?.formation || merged.tactic?.mentality) {
+      await tx.tacticSnapshot.upsert({ where: { checkpointId }, create: { checkpointId, formation: merged.tactic.formation || null, mentality: merged.tactic.mentality || null }, update: { formation: merged.tactic.formation || null, mentality: merged.tactic.mentality || null } })
+      saved.push('tactic')
+    }
+
+    // Finances
+    const f = merged.finances
+    if (Object.values(f).some(v => v != null)) {
+      await tx.financeSnapshot.upsert({ where: { checkpointId }, create: { checkpointId, balance: num(f.balance), profitLoss: num(f.profitLoss), transferBudget: num(f.transferBudget), wageBudget: num(f.wageBudget), wageSpend: num(f.wageSpend), remainingWageBudget: num(f.remainingWageBudget) }, update: { balance: num(f.balance), profitLoss: num(f.profitLoss), transferBudget: num(f.transferBudget), wageBudget: num(f.wageBudget), wageSpend: num(f.wageSpend), remainingWageBudget: num(f.remainingWageBudget) } })
+      saved.push('finances')
+    }
+
+    // Medical
+    const m = merged.medical
+    if (m.currentInjuries != null || m.overallSquadCondition) {
+      await tx.medicalSnapshot.upsert({ where: { checkpointId }, create: { checkpointId, currentInjuries: num(m.currentInjuries), totalInjuriesThisSeason: num(m.totalInjuriesThisSeason), overallSquadCondition: m.overallSquadCondition || null, notes: m.notes || null }, update: { currentInjuries: num(m.currentInjuries), totalInjuriesThisSeason: num(m.totalInjuriesThisSeason), overallSquadCondition: m.overallSquadCondition || null, notes: m.notes || null } })
+      saved.push('medical')
+    }
+
+    // Players
+    if (merged.playerStats?.length > 0) {
+      await tx.playerCheckpointStats.deleteMany({ where: { checkpointId } })
+      for (const p of merged.playerStats) {
+        if (!p.name?.trim()) continue
+        let player = await tx.player.findFirst({ where: { saveId, name: p.name.trim() } })
+        if (!player) player = await tx.player.create({ data: { saveId, name: p.name.trim(), position: p.position || null } })
+        await tx.playerCheckpointStats.create({ data: { checkpointId, playerId: player.id, age: num(p.age), position: p.position || null, appearances: num(p.appearances), goals: num(p.goals), assists: num(p.assists), cleanSheets: num(p.cleanSheets), avgRating: num(p.avgRating), yellowCards: num(p.yellowCards), redCards: num(p.redCards), wage: num(p.wage), contractExpiry: p.contractExpiry ? new Date(p.contractExpiry) : null, morale: p.morale || null, confirmed: true } })
+      }
+      saved.push('player_stats')
+    }
+  })
+
+  // Youth cross-reference
+  const youthUpdated: string[] = []
+  if (merged.playerStats?.length > 0) {
+    const youthPlayers = await prisma.youthPlayer.findMany({ where: { saveId } })
+    for (const yp of youthPlayers) {
+      const match = merged.playerStats.find((p: any) => p.name?.toLowerCase().trim() === yp.name.toLowerCase().trim())
+      if (match) {
+        await prisma.youthUpdate.create({
+          data: { youthPlayerId: yp.id, inGameDate: merged.gameDate ? new Date(merged.gameDate) : null, apps: num(match.appearances), goals: num(match.goals), assists: num(match.assists), avgRating: num(match.avgRating), morale: match.morale || null, summary: `Auto-imported at ${gamesPlayed} games`, aiImported: true },
+        })
+        youthUpdated.push(yp.name)
+      }
+    }
+  }
+
+  return { checkpointId, seasonId: season.id, saved, youthUpdated }
+}
+
+// ── Setup save from screenshots ───────────────────────────────────────────────
+
+async function createSaveFromExtracted(merged: any, userId: string, extraContext: Record<string, string> = {}) {
+  const num = (v: any) => (v != null && !isNaN(Number(v)) ? Number(v) : null)
+  const clubName = merged.clubName || extraContext.clubName || 'Unknown Club'
+  const leagueName = merged.leagueName || extraContext.leagueName || 'Unknown League'
+
+  const save = await prisma.save.create({
+    data: {
+      userId,
+      name: `${clubName} Save`,
+      fmVersion: 'FM26',
+      currentClub: clubName,
+      startingClub: clubName,
+      notes: extraContext.seasonObjective || null,
+      seasons: {
+        create: {
+          seasonLabel: extraContext.seasonLabel || `${new Date().getFullYear()}/${new Date().getFullYear() + 1}`,
+          leagueName,
+          clubName,
+          boardExpectation: extraContext.boardExpectation || null,
+          seasonObjective: extraContext.seasonObjective || null,
+          status: 'active',
+          checkpoints: {
+            create: [
+              { checkpointType: 'pre_season', gamesPlayed: 0, status: 'draft' },
+              { checkpointType: 'game_10', gamesPlayed: 10, status: 'draft' },
+              { checkpointType: 'game_23', gamesPlayed: 23, status: 'draft' },
+              { checkpointType: 'game_35', gamesPlayed: 35, status: 'draft' },
+              { checkpointType: 'game_46', gamesPlayed: 46, status: 'draft' },
+            ],
+          },
+        },
+      },
+    },
+  })
+
+  // Store initial squad
+  let playerCount = 0
+  if (merged.playerStats?.length > 0) {
+    for (const p of merged.playerStats) {
+      if (!p.name?.trim()) continue
+      await prisma.player.create({ data: { saveId: save.id, name: p.name.trim(), position: p.position || null } })
+      playerCount++
+    }
+  }
+
+  return { save, playerCount }
+}
+
+// ── Main chat route ───────────────────────────────────────────────────────────
+
+export async function POST(req: NextRequest) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const body = await req.json()
+    const {
+      messages,           // [{ role, content }] — full history
+      saveId,             // current save (null if setup)
+      images,             // [{ base64, mimeType, filename }]
+      gamesPlayed,        // number, if this is a checkpoint update
+      intent,             // 'setup' | 'checkpoint' | 'chat' | 'setup_complete'
+      setupContext,       // { clubName, seasonObjective, boardExpectation } for final setup step
+    } = body
+
+    let saveContextData: any = null
+    if (saveId) saveContextData = await loadSaveContext(saveId, user.id)
+
+    // ── Process images if any ─────────────────────────────────────────────────
+    let extractionResult: any = null
+    let dbSaveResult: any = null
+    let newSave: any = null
+    let imageTypes: string[] = []
+
+    if (images?.length > 0) {
+      const extractions = await Promise.allSettled(
+        images.map((img: any) => analyzeImage(img.base64, img.mimeType || 'image/png'))
+      )
+      const successful = extractions
+        .filter(r => r.status === 'fulfilled')
+        .map(r => (r as any).value)
+
+      imageTypes = extractions.map((r, i) =>
+        r.status === 'fulfilled' ? (r as any).value?.screenshotType || 'unknown' : 'error'
+      )
+
+      if (successful.length > 0) {
+        extractionResult = mergeExtractions(successful)
+
+        if (intent === 'setup' || !saveId) {
+          // Creating a new save
+          if (setupContext?.clubName || extractionResult.clubName) {
+            const { save, playerCount } = await createSaveFromExtracted(extractionResult, user.id, setupContext || {})
+            newSave = { id: save.id, name: save.name, playerCount }
+          }
+        } else if (saveId && gamesPlayed != null) {
+          // Checkpoint update
+          dbSaveResult = await saveToCheckpoint(saveId, extractionResult, gamesPlayed, user.id)
+        }
+      }
+    }
+
+    // ── Build context for chat model ──────────────────────────────────────────
+    const systemPrompt = buildSystemPrompt(saveContextData, user.email?.split('@')[0] || 'Manager')
+
+    // Build context message about what just happened with images
+    let imageContextMessage = ''
+    if (extractionResult) {
+      const ts = extractionResult.teamStats
+      const found: string[] = []
+      const missing: string[] = []
+
+      if (extractionResult.leagueTable?.length > 0) {
+        const myTeam = extractionResult.leagueTable.find((r: any) => r.isYourTeam)
+        found.push(`league_table:${myTeam ? `${myTeam.position}th, ${myTeam.points}pts` : `${extractionResult.leagueTable.length} teams`}`)
+      } else missing.push('league_table')
+
+      if (Object.values(ts || {}).some(v => v != null)) {
+        found.push(`team_stats:pos${ts.leaguePosition ?? '?'} ${ts.wins ?? '?'}W${ts.draws ?? '?'}D${ts.losses ?? '?'}L xG${ts.xg ?? '?'}`)
+      } else missing.push('team_stats')
+
+      if (extractionResult.playerStats?.length > 0) {
+        const topScorer = [...extractionResult.playerStats].sort((a: any, b: any) => (b.goals || 0) - (a.goals || 0))[0]
+        found.push(`player_stats:${extractionResult.playerStats.length} players, top scorer ${topScorer?.name} ${topScorer?.goals ?? 0}G`)
+      } else missing.push('player_stats')
+
+      const f = extractionResult.finances
+      if (f && Object.values(f).some(v => v != null)) {
+        found.push(`finances:budget £${f.transferBudget ? (f.transferBudget / 1000000).toFixed(1) + 'm' : '?'}`)
+      } else missing.push('finances')
+
+      const m = extractionResult.medical
+      if (m?.currentInjuries != null || m?.overallSquadCondition) {
+        found.push(`medical:${m.currentInjuries ?? '?'} injuries`)
+      } else missing.push('medical')
+
+      if (extractionResult.tactic?.formation) found.push(`tactic:${extractionResult.tactic.formation}`)
+
+      const isYouthCheckpoint = gamesPlayed === 23 || gamesPlayed === 46
+      if (isYouthCheckpoint && !extractionResult.playerStats?.length) missing.push('youth_squad')
+
+      imageContextMessage = `[EXTRACTED FROM ${images.length} SCREENSHOT(S)]\nFound: ${found.join(' | ')}\nMissing: ${missing.join(', ') || 'nothing'}\nSaved to DB: ${dbSaveResult?.saved?.join(', ') || (newSave ? `new save created (${newSave.playerCount} players)` : 'not saved')}\nYouth updated: ${dbSaveResult?.youthUpdated?.join(', ') || 'none'}\nNewSaveId: ${newSave?.id || ''}\nGamesPlayed: ${gamesPlayed || 'unknown'}\nIsYouthCheckpoint: ${gamesPlayed === 23 || gamesPlayed === 46}`
+    }
+
+    // Build messages for chat model
+    const chatMessages = [
+      ...messages.slice(-10), // keep last 10 for context
+      ...(imageContextMessage ? [{
+        role: 'user' as const,
+        content: imageContextMessage,
+      }] : []),
+    ]
+
+    // ── Call chat model ───────────────────────────────────────────────────────
+    const chatResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${process.env.GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...chatMessages,
+        ],
+        max_tokens: 1000,
+        temperature: 0.6,
+      }),
+    })
+
+    if (!chatResponse.ok) {
+      const err = await chatResponse.text()
+      throw new Error(`Chat API error: ${chatResponse.status} ${err}`)
+    }
+
+    const chatResult = await chatResponse.json()
+    const aiMessage = chatResult.choices[0]?.message?.content || 'Something went wrong, try again.'
+
+    return NextResponse.json({
+      message: aiMessage,
+      newSaveId: newSave?.id || null,
+      checkpointId: dbSaveResult?.checkpointId || null,
+      saved: dbSaveResult?.saved || [],
+      youthUpdated: dbSaveResult?.youthUpdated || [],
+      imageTypes,
+    })
+
+  } catch (err: any) {
+    console.error('Chat API error:', err)
+    return NextResponse.json({ error: err.message || 'Chat failed' }, { status: 500 })
+  }
+}
