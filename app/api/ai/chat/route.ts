@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
+import { buildFM26KnowledgeBlock, getChecklistForGames, evaluateChecklist, isCheckpointComplete } from '@/lib/fm26-knowledge'
 
 // ── Vision extraction (same model as analyze-screenshot) ─────────────────────
 
@@ -123,15 +124,18 @@ function buildSystemPrompt(save: any, userName: string): string {
     `${cp.gamesPlayed} games: ${cp.teamStats?.leaguePosition != null ? `${cp.teamStats.leaguePosition}th` : '?'}, ${cp.teamStats?.points ?? '?'}pts`
   ).join(' → ')
 
-  return `You are FM Assistant — a personal Football Manager analyst for ${userName || 'the manager'}.
+  const fm26Knowledge = buildFM26KnowledgeBlock()
+
+  return `You are FM Assistant — a personal Football Manager analyst for ${userName || 'the manager'}. You are an expert in FM26 specifically — not generic FM advice.
 
 ${save ? `SAVE CONTEXT:
 - Club: ${save.currentClub || save.name}
 - League: ${season?.leagueName || 'Unknown'}, Season ${season?.seasonLabel || ''}
 - Current position: ${ts?.leaguePosition ?? '?'}th with ${ts?.wins ?? '?'}W ${ts?.draws ?? '?'}D ${ts?.losses ?? '?'}L, ${ts?.points ?? '?'} pts
 - Goals: ${ts?.goalsFor ?? '?'} scored, ${ts?.goalsAgainst ?? '?'} conceded
-${ts?.xg != null ? `- xG: ${ts.xg} | xGA: ${ts.xga}` : ''}
+${ts?.xg != null ? `- xG: ${ts.xg} | xGA: ${ts.xga} (xG diff: ${ts.xg != null && ts.xga != null ? (ts.xg - ts.xga).toFixed(1) : '?'})` : ''}
 ${ts?.possession != null ? `- Possession: ${ts.possession}%` : ''}
+${ts?.setPieceGoalsFor != null ? `- Set piece goals: ${ts.setPieceGoalsFor} scored, ${ts.setPieceGoalsAgainst ?? '?'} conceded` : ''}
 ${topScorers ? `- Top scorers: ${topScorers}` : ''}
 ${fin?.transferBudget != null ? `- Transfer budget: £${(fin.transferBudget / 1000000).toFixed(1)}m` : ''}
 ${fin?.remainingWageBudget != null ? `- Wage budget remaining: £${(fin.remainingWageBudget / 1000).toFixed(0)}k/wk` : ''}
@@ -139,23 +143,28 @@ ${cpSummaries ? `- Season checkpoints: ${cpSummaries}` : ''}
 ${youthNames ? `- Youth/loan players being tracked: ${youthNames}` : ''}
 - Games played so far this season: ${latestCp?.gamesPlayed ?? 0}` : `No save loaded yet — help the user set up their first save.`}
 
+${fm26Knowledge}
+
 YOUR PERSONALITY:
-- Direct, knowledgeable, like a trusted analyst who knows their save inside out
-- Reference their actual stats, players, and league position — not generic advice
-- Concise but insightful — don't pad responses
-- When you get something wrong or uncertain, say so
+- Direct, knowledgeable, like a trusted analyst who knows this specific save inside out
+- Reference their actual stats, players, and league position — never generic advice
+- When giving tactic/set piece advice, name specific tactics from the library above — cite download counts
+- If their set piece goals are below 15-20% of total goals, flag it and suggest Knap or Parisian routines specifically
+- If xG is positive but results aren't reflecting it, explain why using FM26 mechanics
+- Concise but insightful — no padding
+- When uncertain, say so
 
 WHAT YOU CAN DO:
 1. SETUP: If no save exists or user says "new save", guide them: ask for squad screenshot first, then finances, then a couple of text questions (season goal, board expectation)
 2. CHECKPOINT UPDATES: When user sends screenshots (at 10/23/35/46 games), process them all, then respond with a checklist:
-   ✅ [what was found] — [one-line insight]
+   ✅ [what was found] — [one-line insight specific to their numbers]
    ❌ [what's missing] — ask specifically for that screen
-   At 23 and 46 games only, also ask for youth/loan player screens
-3. QUESTIONS: Answer anything about their save — tactics, form, who to sign, transfer decisions
-4. ANALYSIS: Spot patterns in their data, flag concerns proactively
+   At 23 and 46 games only, also check for youth/loan player screens
+3. QUESTIONS: Answer anything about their save — tactics, form, who to sign, transfer decisions — using FM26-specific knowledge above
+4. ANALYSIS: Spot patterns in their data, flag concerns proactively, connect stats to specific FM26 mechanics
 
-CHECKLIST FORMAT (use when screenshots were processed):
-After showing found/missing items, add 2-3 lines of actual analysis — not generic, based on their numbers.
+CHECKLIST FORMAT (when screenshots were processed):
+Show ✅/❌ for each data type, then 2-3 lines of FM26-specific analysis based on their actual numbers.
 
 SETUP FORMAT:
 Step 1: "Send me your squad overview screenshot"
@@ -163,7 +172,7 @@ Step 2: "Now send finances"
 Step 3: Ask season objective and board expectation as text questions
 Step 4: Confirm: "Setting up [Club] in [League]... done. [X] players imported."
 
-Keep responses tight. No bullet points for everything — mix in natural sentences.`
+Keep responses tight. Mix natural sentences with bullet points only when genuinely useful.`
 }
 
 // ── Save extracted data to checkpoint ────────────────────────────────────────
@@ -439,7 +448,37 @@ export async function POST(req: NextRequest) {
       const isYouthCheckpoint = gamesPlayed === 23 || gamesPlayed === 46
       if (isYouthCheckpoint && !extractionResult.playerStats?.length) missing.push('youth_squad')
 
-      imageContextMessage = `[EXTRACTED FROM ${images.length} SCREENSHOT(S)]\nFound: ${found.join(' | ')}\nMissing: ${missing.join(', ') || 'nothing'}\nSaved to DB: ${dbSaveResult?.saved?.join(', ') || (newSave ? `new save created (${newSave.playerCount} players)` : 'not saved')}\nYouth updated: ${dbSaveResult?.youthUpdated?.join(', ') || 'none'}\nNewSaveId: ${newSave?.id || ''}\nGamesPlayed: ${gamesPlayed || 'unknown'}\nIsYouthCheckpoint: ${gamesPlayed === 23 || gamesPlayed === 46}`
+      imageContextMessage = `[EXTRACTED FROM ${images.length} SCREENSHOT(S)]\nFound: ${found.join(' | ')}\nMissing: ${missing.join(', ') || 'nothing'}\nSaved to DB: ${dbSaveResult?.saved?.join(', ') || (newSave ? `new save created (${newSave.playerCount} players)` : 'not saved')}\nYouth updated: ${dbSaveResult?.youthUpdated?.join(', ') || 'none'}\nNewSaveId: ${newSave?.id || ''}\nGamesPlayed: ${gamesPlayed || 'unknown'}\nIsYouthCheckpoint: ${isYouthCheckpoint}`
+    }
+
+    // ── Build checklist ───────────────────────────────────────────────────────
+    let checklistData: any = null
+    if (gamesPlayed != null && extractionResult) {
+      const extracted = extractionResult
+      const hasLeagueTable = (extracted.leagueTable?.length ?? 0) > 0
+      const hasTeamStats = Object.values(extracted.teamStats || {}).some(v => v != null)
+      const hasPlayerStats = (extracted.playerStats?.length ?? 0) > 0
+      const hasFinances = Object.values(extracted.finances || {}).some(v => v != null)
+      const hasMedical = extracted.medical?.currentInjuries != null || !!extracted.medical?.overallSquadCondition
+      const hasTactic = !!extracted.tactic?.formation
+      const hasYouth = (gamesPlayed === 23 || gamesPlayed === 46) ? hasPlayerStats : false
+
+      const checklist = getChecklistForGames(gamesPlayed)
+      const results = evaluateChecklist(checklist, { hasLeagueTable, hasTeamStats, hasPlayerStats, hasFinances, hasMedical, hasTactic, hasYouth })
+      const complete = isCheckpointComplete(checklist, results)
+
+      checklistData = {
+        gamesPlayed,
+        items: results.map(r => ({
+          key: r.item.key,
+          label: r.item.label,
+          required: r.item.required,
+          screenshotHint: r.item.screenshotHint,
+          found: r.found,
+        })),
+        complete,
+        missingRequired: results.filter(r => r.item.required && !r.found).map(r => r.item.label),
+      }
     }
 
     // Build messages for chat model
@@ -481,6 +520,7 @@ export async function POST(req: NextRequest) {
       saved: dbSaveResult?.saved || [],
       youthUpdated: dbSaveResult?.youthUpdated || [],
       imageTypes,
+      checklist: checklistData,
     })
 
   } catch (err: any) {

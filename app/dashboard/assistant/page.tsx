@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Paperclip, Send, X, Loader2, CheckCircle2, AlertCircle, Zap } from 'lucide-react'
+import { Paperclip, Send, X, Loader2, CheckCircle2, AlertCircle, Zap, Camera } from 'lucide-react'
 
 interface Save {
   id: string
@@ -9,13 +9,29 @@ interface Save {
   currentClub: string | null
 }
 
+interface ChecklistItem {
+  key: string
+  label: string
+  required: boolean
+  found: boolean
+  screenshotHint: string
+}
+
+interface ChecklistData {
+  gamesPlayed: number
+  items: ChecklistItem[]
+  complete: boolean
+  missingRequired: string[]
+}
+
 interface Message {
   id: string
   role: 'user' | 'assistant'
   content: string
-  images?: string[]        // preview URLs
-  savedItems?: string[]    // data types that were saved
+  images?: string[]
+  savedItems?: string[]
   youthUpdated?: string[]
+  checklist?: ChecklistData
   isLoading?: boolean
 }
 
@@ -27,7 +43,6 @@ interface AttachedImage {
 }
 
 // ── Markdown-lite renderer ────────────────────────────────────────────────────
-// Handles ✅ ❌ **bold** and newlines — keeps AI responses readable
 
 function renderMessage(text: string) {
   const lines = text.split('\n')
@@ -35,11 +50,9 @@ function renderMessage(text: string) {
     const trimmed = line.trim()
     if (!trimmed) return <br key={i} />
 
-    // Colour ✅ / ❌ lines
     const isCheck = trimmed.startsWith('✅')
     const isMiss  = trimmed.startsWith('❌')
 
-    // Bold **text**
     const parts = trimmed.split(/(\*\*[^*]+\*\*)/)
     const rendered = parts.map((p, j) =>
       p.startsWith('**') && p.endsWith('**')
@@ -60,6 +73,104 @@ function renderMessage(text: string) {
       </p>
     )
   })
+}
+
+// ── Checkpoint checklist card ─────────────────────────────────────────────────
+
+function ChecklistCard({ checklist }: { checklist: ChecklistData }) {
+  const required = checklist.items.filter(i => i.required)
+  const optional = checklist.items.filter(i => !i.required)
+  const foundRequired = required.filter(i => i.found).length
+  const pct = required.length > 0 ? Math.round((foundRequired / required.length) * 100) : 100
+
+  return (
+    <div className="mt-3 rounded-xl overflow-hidden"
+      style={{ border: '1px solid rgba(255,255,255,0.08)', background: '#0d0d0d' }}>
+
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b"
+        style={{ borderColor: 'rgba(255,255,255,0.06)', background: '#111111' }}>
+        <div className="flex items-center gap-2">
+          <Camera size={13} style={{ color: '#888888' }} />
+          <span className="text-xs font-semibold text-white">{checklist.gamesPlayed} Game Checkpoint</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="h-1 w-20 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
+            <div
+              className="h-full rounded-full transition-all"
+              style={{
+                width: `${pct}%`,
+                background: checklist.complete ? '#34d399' : pct >= 50 ? '#fbbf24' : '#f87171',
+              }}
+            />
+          </div>
+          <span className="text-[10px] font-medium" style={{
+            color: checklist.complete ? '#34d399' : '#fbbf24',
+          }}>
+            {foundRequired}/{required.length} required
+          </span>
+        </div>
+      </div>
+
+      {/* Required items */}
+      <div className="px-4 pt-3 pb-2 space-y-1.5">
+        <p className="text-[10px] font-medium uppercase tracking-widest mb-2" style={{ color: '#444444' }}>Required</p>
+        {required.map(item => (
+          <div key={item.key} className="flex items-start gap-2.5">
+            <div className="mt-0.5 flex-shrink-0">
+              {item.found
+                ? <CheckCircle2 size={13} style={{ color: '#34d399' }} />
+                : <AlertCircle size={13} style={{ color: '#f87171' }} />
+              }
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-[13px]" style={{ color: item.found ? '#ffffff' : '#888888' }}>
+                {item.label}
+              </span>
+              {!item.found && (
+                <p className="text-[11px] mt-0.5" style={{ color: '#555555' }}>
+                  {item.screenshotHint}
+                </p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Optional items */}
+      {optional.length > 0 && (
+        <div className="px-4 pb-3 pt-1 space-y-1.5 border-t mt-2" style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
+          <p className="text-[10px] font-medium uppercase tracking-widest mb-2 mt-2" style={{ color: '#333333' }}>Optional</p>
+          {optional.map(item => (
+            <div key={item.key} className="flex items-center gap-2.5">
+              <div className="flex-shrink-0">
+                {item.found
+                  ? <CheckCircle2 size={11} style={{ color: '#22c55e', opacity: 0.7 }} />
+                  : <div className="w-[11px] h-[11px] rounded-full border" style={{ borderColor: '#333333' }} />
+                }
+              </div>
+              <span className="text-[12px]" style={{ color: item.found ? '#666666' : '#444444' }}>
+                {item.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Completion banner / missing prompt */}
+      {checklist.complete ? (
+        <div className="mx-3 mb-3 px-3 py-2 rounded-lg text-xs font-medium text-center"
+          style={{ background: 'rgba(52,211,153,0.08)', color: '#34d399', border: '1px solid rgba(52,211,153,0.15)' }}>
+          ✓ Checkpoint complete — all data saved
+        </div>
+      ) : (
+        <div className="mx-3 mb-3 px-3 py-2 rounded-lg text-xs"
+          style={{ background: 'rgba(251,191,36,0.06)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.12)' }}>
+          Missing: {checklist.missingRequired.join(', ')} — send those screenshots to complete this checkpoint
+        </div>
+      )}
+    </div>
+  )
 }
 
 // ── Game milestone selector ───────────────────────────────────────────────────
@@ -97,11 +208,10 @@ export default function AssistantPage() {
   const [loading, setLoading]     = useState(false)
   const [hasSaves, setHasSaves]   = useState<boolean | null>(null)
 
-  const bottomRef  = useRef<HTMLDivElement>(null)
-  const fileRef    = useRef<HTMLInputElement>(null)
+  const bottomRef   = useRef<HTMLDivElement>(null)
+  const fileRef     = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // Load saves
   useEffect(() => {
     fetch('/api/saves').then(r => r.json()).then(data => {
       const list: Save[] = data || []
@@ -111,7 +221,6 @@ export default function AssistantPage() {
     })
   }, [])
 
-  // Initial greeting once we know save state
   useEffect(() => {
     if (hasSaves === null) return
 
@@ -119,7 +228,7 @@ export default function AssistantPage() {
       ? {
           id: 'init',
           role: 'assistant',
-          content: `Hey — what's up? Drop your screenshots in here whenever you hit a milestone, or just ask me anything about your save.\n\nIf you're doing a checkpoint update, pick how many games you've played using the selector above the send button, then dump your screenshots in.`,
+          content: `Hey — what's up? Drop your screenshots in whenever you hit a milestone, or just ask me anything about your save.\n\nFor a checkpoint update, pick your game count using the selector above the send button, then dump all your screenshots in at once.`,
         }
       : {
           id: 'init',
@@ -130,12 +239,10 @@ export default function AssistantPage() {
     setMessages([greeting])
   }, [hasSaves])
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Auto-resize textarea
   useEffect(() => {
     const ta = textareaRef.current
     if (!ta) return
@@ -147,7 +254,6 @@ export default function AssistantPage() {
     Array.from(files).filter(f => f.type.startsWith('image/')).forEach(file => {
       const preview = URL.createObjectURL(file)
       const img: AttachedImage = { id: Math.random().toString(36).slice(2), file, preview }
-      // Convert to base64
       const reader = new FileReader()
       reader.onload = () => {
         const base64 = (reader.result as string).split(',')[1]
@@ -164,7 +270,6 @@ export default function AssistantPage() {
     if (!text && !hasImages) return
     if (loading) return
 
-    // Build user message
     const userMsg: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -185,7 +290,6 @@ export default function AssistantPage() {
     setImages([])
     setLoading(true)
 
-    // Wait for all base64 conversions
     const imagePayloads = await Promise.all(
       sentImages.map(async img => {
         const base64 = img.base64 || await new Promise<string>((resolve) => {
@@ -197,7 +301,6 @@ export default function AssistantPage() {
       })
     )
 
-    // Build history (exclude loading msg)
     const history = messages
       .filter(m => !m.isLoading && m.id !== 'init')
       .map(m => ({ role: m.role, content: m.content }))
@@ -219,7 +322,6 @@ export default function AssistantPage() {
 
       const data = await res.json()
 
-      // If a new save was created, update state
       if (data.newSaveId) {
         setSaveId(data.newSaveId)
         setHasSaves(true)
@@ -233,6 +335,7 @@ export default function AssistantPage() {
         content: data.error ? `Something went wrong: ${data.error}` : data.message,
         savedItems: data.saved?.length > 0 ? data.saved : undefined,
         youthUpdated: data.youthUpdated?.length > 0 ? data.youthUpdated : undefined,
+        checklist: data.checklist ?? undefined,
       }
 
       setMessages(prev => prev.filter(m => m.id !== 'loading').concat(aiMsg))
@@ -307,7 +410,7 @@ export default function AssistantPage() {
                       <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
                     </svg>
                   </div>
-                  <div>
+                  <div className="flex-1 min-w-0">
                     {msg.isLoading ? (
                       <div className="flex items-center gap-2 py-1">
                         <Loader2 size={14} className="animate-spin" style={{ color: '#555555' }} />
@@ -316,6 +419,10 @@ export default function AssistantPage() {
                     ) : (
                       <>
                         <div>{renderMessage(msg.content)}</div>
+
+                        {/* Checklist card — shown after screenshot processing */}
+                        {msg.checklist && <ChecklistCard checklist={msg.checklist} />}
+
                         {/* Saved data chips */}
                         {msg.savedItems && msg.savedItems.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mt-3">
