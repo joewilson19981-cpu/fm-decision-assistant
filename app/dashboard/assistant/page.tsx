@@ -250,7 +250,7 @@ export default function AssistantPage() {
     ta.style.height = Math.min(ta.scrollHeight, 160) + 'px'
   }, [input])
 
-  // Resize image to max 1024px wide — keeps text readable, cuts payload ~80%
+  // Resize image to max 1024px on longest side — keeps FM text readable, cuts payload ~80%
   const resizeImage = useCallback((file: File): Promise<string> => {
     return new Promise((resolve) => {
       const canvas = document.createElement('canvas')
@@ -259,7 +259,7 @@ export default function AssistantPage() {
       const url = URL.createObjectURL(file)
       img.onload = () => {
         const MAX = 1024
-        const ratio = Math.min(1, MAX / img.width)
+        const ratio = Math.min(1, MAX / Math.max(img.width, img.height))
         canvas.width = Math.round(img.width * ratio)
         canvas.height = Math.round(img.height * ratio)
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
@@ -322,10 +322,13 @@ export default function AssistantPage() {
     if (text) history.push({ role: 'user', content: text })
 
     try {
-      // Step 1: Extract data from images in batches of 9 (Vercel Hobby 60s limit)
+      // Step 1: Extract in parallel batches of 3 images each.
+      // Why 3? Vercel Hobby = 60s hard timeout. 3 squad screenshots → ~75 players
+      // → ~4000 output tokens → ~28s for Claude Haiku. Safe margin.
+      // 18 images = 6 parallel calls, all run simultaneously → still ~28s total.
       let extractedData: any = null
       if (imagePayloads.length > 0) {
-        const BATCH = 9
+        const BATCH = 3
         const batches: (typeof imagePayloads)[] = []
         for (let i = 0; i < imagePayloads.length; i += BATCH) {
           batches.push(imagePayloads.slice(i, i + BATCH))
@@ -336,22 +339,36 @@ export default function AssistantPage() {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ images: batch }),
-            }).then(r => r.ok ? r.json() : null)
+            })
+              .then(r => r.ok ? r.json() : null)
+              .catch(() => null)
           )
         )
-        // Merge batch results — combine player arrays, prefer first non-null scalar
+        // Merge all batch results into one combined object
         extractedData = results.filter(Boolean).reduce((acc: any, r: any) => {
           if (!acc) return r
-          const merged: any = { ...acc }
-          for (const [k, v] of Object.entries(r)) {
-            if (k === 'playerStats') continue
-            if (k === 'leagueTable') continue
-            if (merged[k] == null && v != null) merged[k] = v
+          const merged: any = {}
+          const allKeys = new Set([...Object.keys(acc), ...Object.keys(r)])
+          for (const k of allKeys) {
+            if (k === 'playerStats' || k === 'leagueTable' || k === 'teamStats') continue
+            merged[k] = acc[k] != null ? acc[k] : r[k]
           }
-          merged.playerStats = [...(acc.playerStats || []), ...(r.playerStats || [])].filter(
-            (p: any, i: number, arr: any[]) => arr.findIndex((x: any) => x.name === p.name) === i
-          )
-          merged.leagueTable = acc.leagueTable?.length ? acc.leagueTable : r.leagueTable
+          // teamStats: merge field-by-field so we get all available stats
+          const accTs = acc.teamStats || {}
+          const rTs = r.teamStats || {}
+          merged.teamStats = {}
+          for (const k of new Set([...Object.keys(accTs), ...Object.keys(rTs)])) {
+            merged.teamStats[k] = accTs[k] != null ? accTs[k] : rTs[k]
+          }
+          // playerStats: combine and deduplicate by name
+          merged.playerStats = [...(acc.playerStats || [])]
+          for (const p of (r.playerStats || [])) {
+            if (!merged.playerStats.some((x: any) => x.name === p.name)) {
+              merged.playerStats.push(p)
+            }
+          }
+          // leagueTable: take first non-empty result
+          merged.leagueTable = acc.leagueTable?.length ? acc.leagueTable : (r.leagueTable || [])
           return merged
         }, null)
       }
