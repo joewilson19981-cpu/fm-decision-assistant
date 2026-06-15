@@ -443,11 +443,10 @@ export async function POST(req: NextRequest) {
       extractionResult = extractedData
 
       if (intent === 'setup' || !saveId) {
-        // Creating a new save
-        if (setupContext?.clubName || extractionResult.clubName) {
-          const { save, playerCount } = await createSaveFromExtracted(extractionResult, user.id, setupContext || {})
-          newSave = { id: save.id, name: save.name, playerCount }
-        }
+        // Always create the save — createSaveFromExtracted handles missing clubName (defaults to 'Unknown Club')
+        // The frontend never sends setupContext so we cannot gate on it
+        const { save, playerCount } = await createSaveFromExtracted(extractionResult, user.id, setupContext || {})
+        newSave = { id: save.id, name: save.name, playerCount }
       } else if (saveId && gamesPlayed != null) {
         // Checkpoint update
         dbSaveResult = await saveToCheckpoint(saveId, extractionResult, gamesPlayed, user.id)

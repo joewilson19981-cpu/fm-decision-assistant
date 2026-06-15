@@ -198,31 +198,67 @@ function MilestoneSelector({ value, onChange }: { value: number | null; onChange
   )
 }
 
+const CACHE_KEY = 'fm_assistant_chat_v1'
+
 export default function AssistantPage() {
-  const [saves, setSaves]         = useState<Save[]>([])
-  const [saveId, setSaveId]       = useState<string | null>(null)
-  const [messages, setMessages]   = useState<Message[]>([])
-  const [input, setInput]         = useState('')
-  const [images, setImages]       = useState<AttachedImage[]>([])
-  const [gamesPlayed, setGamesPlayed] = useState<number | null>(null)
-  const [loading, setLoading]     = useState(false)
-  const [hasSaves, setHasSaves]   = useState<boolean | null>(null)
+  const [saves, setSaves]               = useState<Save[]>([])
+  const [saveId, setSaveId]             = useState<string | null>(null)
+  const [messages, setMessages]         = useState<Message[]>([])
+  const [input, setInput]               = useState('')
+  const [images, setImages]             = useState<AttachedImage[]>([])
+  const [gamesPlayed, setGamesPlayed]   = useState<number | null>(null)
+  const [loading, setLoading]           = useState(false)
+  const [hasSaves, setHasSaves]         = useState<boolean | null>(null)
+  const [restoredFromCache, setRestoredFromCache] = useState(false)
 
   const bottomRef   = useRef<HTMLDivElement>(null)
   const fileRef     = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
+  // ── On mount: restore chat from localStorage, then fetch saves ───────────────
   useEffect(() => {
+    let cachedSaveId: string | null = null
+    try {
+      const raw = localStorage.getItem(CACHE_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        const cachedMsgs: Message[] = (parsed.messages || []).filter((m: Message) => !m.isLoading)
+        if (cachedMsgs.length > 0) {
+          setMessages(cachedMsgs)
+          setRestoredFromCache(true)
+        }
+        if (parsed.saveId) {
+          setSaveId(parsed.saveId)
+          cachedSaveId = parsed.saveId
+        }
+      }
+    } catch {}
+
     fetch('/api/saves').then(r => r.json()).then(data => {
       const list: Save[] = data || []
       setSaves(list)
       setHasSaves(list.length > 0)
-      if (list.length > 0) setSaveId(list[0].id)
+      // Only override saveId if we didn't restore one from cache
+      if (list.length > 0 && !cachedSaveId) setSaveId(list[0].id)
     })
   }, [])
 
+  // ── Persist messages + saveId to localStorage on every change ────────────────
+  useEffect(() => {
+    const clean = messages.filter(m => !m.isLoading)
+    if (clean.length === 0) return
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        messages: clean.slice(-60), // keep last 60 messages
+        saveId,
+      }))
+    } catch {}
+  }, [messages, saveId])
+
+  // ── Show greeting only if we have no cached history ──────────────────────────
   useEffect(() => {
     if (hasSaves === null) return
+    if (restoredFromCache) return // cached history already set — don't overwrite with greeting
 
     const greeting: Message = hasSaves
       ? {
@@ -233,11 +269,11 @@ export default function AssistantPage() {
       : {
           id: 'init',
           role: 'assistant',
-          content: `Let's get your save set up.\n\nSend me a screenshot of your **squad overview** screen in FM to get started — I'll pull in all your players automatically.`,
+          content: `Let's get your save set up.\n\nSend me all your FM screenshots in one go — squad, finances, league table, whatever you have. I'll extract everything automatically and create your save.`,
         }
 
     setMessages([greeting])
-  }, [hasSaves])
+  }, [hasSaves, restoredFromCache])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
