@@ -322,17 +322,38 @@ export default function AssistantPage() {
     if (text) history.push({ role: 'user', content: text })
 
     try {
-      // Step 1: Extract data from images (fast dedicated endpoint)
+      // Step 1: Extract data from images in batches of 9 (Vercel Hobby 60s limit)
       let extractedData: any = null
       if (imagePayloads.length > 0) {
-        const extractRes = await fetch('/api/ai/extract', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ images: imagePayloads }),
-        })
-        if (extractRes.ok) {
-          extractedData = await extractRes.json()
+        const BATCH = 9
+        const batches: (typeof imagePayloads)[] = []
+        for (let i = 0; i < imagePayloads.length; i += BATCH) {
+          batches.push(imagePayloads.slice(i, i + BATCH))
         }
+        const results = await Promise.all(
+          batches.map(batch =>
+            fetch('/api/ai/extract', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ images: batch }),
+            }).then(r => r.ok ? r.json() : null)
+          )
+        )
+        // Merge batch results — combine player arrays, prefer first non-null scalar
+        extractedData = results.filter(Boolean).reduce((acc: any, r: any) => {
+          if (!acc) return r
+          const merged: any = { ...acc }
+          for (const [k, v] of Object.entries(r)) {
+            if (k === 'playerStats') continue
+            if (k === 'leagueTable') continue
+            if (merged[k] == null && v != null) merged[k] = v
+          }
+          merged.playerStats = [...(acc.playerStats || []), ...(r.playerStats || [])].filter(
+            (p: any, i: number, arr: any[]) => arr.findIndex((x: any) => x.name === p.name) === i
+          )
+          merged.leagueTable = acc.leagueTable?.length ? acc.leagueTable : r.leagueTable
+          return merged
+        }, null)
       }
 
       // Step 2: Chat — send extracted JSON (not images) to keep payload tiny
