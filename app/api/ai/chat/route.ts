@@ -365,7 +365,9 @@ async function saveToCheckpoint(saveId: string, merged: any, gamesPlayed: number
 
 async function createSaveFromExtracted(merged: any, userId: string, extraContext: Record<string, string> = {}) {
   const num = (v: any) => (v != null && !isNaN(Number(v)) ? Number(v) : null)
-  const clubName = merged.clubName || extraContext.clubName || 'Unknown Club'
+  // Prefer isYourTeam row from league table — more reliable than clubName which can pick up any team
+  const yourTeamRow = merged.leagueTable?.find((r: any) => r.isYourTeam)
+  const clubName = yourTeamRow?.teamName || merged.clubName || extraContext.clubName || 'Unknown Club'
   const leagueName = merged.leagueName || extraContext.leagueName || 'Unknown League'
 
   const save = await prisma.save.create({

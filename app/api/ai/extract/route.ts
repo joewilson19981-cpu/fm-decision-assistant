@@ -22,7 +22,8 @@ You will receive one or more FM screenshots. Extract ALL visible data from ALL i
 Rules:
 - Merge players across all squad screenshots (deduplicate by name)
 - Convert financials to raw numbers (£2.5M → 2500000). Dates to YYYY-MM-DD
-- For league tables, set isYourTeam: true for the highlighted/bold team row
+- clubName MUST be the club the manager is MANAGING — only set it if you see a squad/club overview clearly showing this is YOUR club. Do NOT copy a team name from the league table into clubName.
+- For league tables, set isYourTeam: true for the highlighted/bold/differently-coloured team row
 - Return ONLY the JSON, no explanation`
 
 export async function POST(req: NextRequest) {
