@@ -92,18 +92,17 @@ async function loadSaveContext(saveId: string, userId: string) {
         orderBy: { createdAt: 'desc' },
         include: {
           checkpoints: {
-            orderBy: { gamesPlayed: 'desc' },
-            take: 3,
+            orderBy: { gamesPlayed: 'asc' },
             include: {
               teamStats: true,
               financeSnapshot: true,
-              playerStats: { include: { player: true }, take: 20, orderBy: { goals: 'desc' } },
+              playerStats: { include: { player: true }, take: 25, orderBy: { goals: 'desc' } },
               leagueTableSnapshots: { where: { isYourTeam: true }, take: 1 },
             },
           },
         },
       },
-      youthPlayers: { take: 10 },
+      youthPlayers: { take: 15 },
     },
   })
   return save
@@ -111,37 +110,87 @@ async function loadSaveContext(saveId: string, userId: string) {
 
 function buildSystemPrompt(save: any, userName: string): string {
   const season = save?.seasons?.[0]
-  const latestCp = season?.checkpoints?.[0]
+
+  // Sort checkpoints oldest→newest for trend analysis
+  const checkpoints = [...(season?.checkpoints ?? [])].sort((a: any, b: any) => a.gamesPlayed - b.gamesPlayed)
+  const latestCp = checkpoints.at(-1)
   const ts = latestCp?.teamStats
   const fin = latestCp?.financeSnapshot
+
   const topScorers = latestCp?.playerStats
     ?.filter((p: any) => p.goals != null && p.goals > 0)
-    ?.slice(0, 3)
-    ?.map((p: any) => `${p.player.name} (${p.goals}G${p.assists ? ` ${p.assists}A` : ''})`)
+    ?.slice(0, 5)
+    ?.map((p: any) => `${p.player.name} (${p.goals}G${p.assists ? ` ${p.assists}A` : ''}${p.avgRating ? ` avg${Number(p.avgRating).toFixed(2)}` : ''})`)
     ?.join(', ')
-  const youthNames = save?.youthPlayers?.map((yp: any) => `${yp.name} (${yp.playerType})`).join(', ')
-  const cpSummaries = season?.checkpoints?.map((cp: any) =>
-    `${cp.gamesPlayed} games: ${cp.teamStats?.leaguePosition != null ? `${cp.teamStats.leaguePosition}th` : '?'}, ${cp.teamStats?.points ?? '?'}pts`
-  ).join(' → ')
+
+  const topRated = latestCp?.playerStats
+    ?.filter((p: any) => p.avgRating != null && p.appearances && p.appearances >= 3)
+    ?.sort((a: any, b: any) => Number(b.avgRating) - Number(a.avgRating))
+    ?.slice(0, 3)
+    ?.map((p: any) => `${p.player.name} (${Number(p.avgRating).toFixed(2)})`)
+    ?.join(', ')
+
+  const youthNames = save?.youthPlayers?.map((yp: any) => `${yp.name} (${yp.playerType}${yp.position ? `, ${yp.position}` : ''})`).join(', ')
+
+  // Full trend across all checkpoints
+  const cpTrend = checkpoints
+    .filter((cp: any) => cp.teamStats)
+    .map((cp: any) => {
+      const t = cp.teamStats
+      const xgDiff = (t.xg != null && t.xga != null) ? (Number(t.xg) - Number(t.xga)).toFixed(1) : null
+      const setPctStr = (t.setPieceGoalsFor != null && t.goalsFor && t.goalsFor > 0)
+        ? ` set piece ${t.setPieceGoalsFor}G (${Math.round(t.setPieceGoalsFor / t.goalsFor * 100)}%)`
+        : ''
+      return `  [${cp.gamesPlayed}G] ${t.leaguePosition ?? '?'}th · ${t.points ?? '?'}pts · ${t.wins ?? '?'}W${t.draws ?? '?'}D${t.losses ?? '?'}L · GF${t.goalsFor ?? '?'} GA${t.goalsAgainst ?? '?'}${xgDiff ? ` · xGdiff${xgDiff}` : ''}${t.possession ? ` · ${Number(t.possession).toFixed(0)}% poss` : ''}${t.cleanSheets != null ? ` · ${t.cleanSheets}CS` : ''}${setPctStr}`
+    }).join('\n')
+
+  // Trend analysis
+  const firstCp = checkpoints.find((cp: any) => cp.teamStats)
+  const positionTrend = (firstCp?.teamStats && latestCp?.teamStats)
+    ? (latestCp.teamStats.leaguePosition ?? 99) < (firstCp.teamStats.leaguePosition ?? 99) ? '↑ improving' : '↓ dropping'
+    : null
+
+  // Contract alerts from player data
+  const now = new Date()
+  const alertDate = new Date(now); alertDate.setMonth(alertDate.getMonth() + 8)
+  const contractAlerts = latestCp?.playerStats
+    ?.filter((p: any) => {
+      if (!p.contractExpiry) return false
+      const exp = new Date(p.contractExpiry)
+      return exp <= alertDate && exp >= now
+    })
+    ?.map((p: any) => {
+      const exp = new Date(p.contractExpiry)
+      const months = Math.round((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30))
+      return `${p.player.name} (${months}mo)`
+    })
+    ?.join(', ')
 
   const fm26Knowledge = buildFM26KnowledgeBlock()
 
   return `You are FM Assistant — a personal Football Manager analyst for ${userName || 'the manager'}. You are an expert in FM26 specifically — not generic FM advice.
 
 ${save ? `SAVE CONTEXT:
-- Club: ${save.currentClub || save.name}
-- League: ${season?.leagueName || 'Unknown'}, Season ${season?.seasonLabel || ''}
-- Current position: ${ts?.leaguePosition ?? '?'}th with ${ts?.wins ?? '?'}W ${ts?.draws ?? '?'}D ${ts?.losses ?? '?'}L, ${ts?.points ?? '?'} pts
-- Goals: ${ts?.goalsFor ?? '?'} scored, ${ts?.goalsAgainst ?? '?'} conceded
-${ts?.xg != null ? `- xG: ${ts.xg} | xGA: ${ts.xga} (xG diff: ${ts.xg != null && ts.xga != null ? (ts.xg - ts.xga).toFixed(1) : '?'})` : ''}
-${ts?.possession != null ? `- Possession: ${ts.possession}%` : ''}
-${ts?.setPieceGoalsFor != null ? `- Set piece goals: ${ts.setPieceGoalsFor} scored, ${ts.setPieceGoalsAgainst ?? '?'} conceded` : ''}
+Club: ${save.currentClub || save.name} | League: ${season?.leagueName || 'Unknown'} | Season: ${season?.seasonLabel || ''}
+Board expectation: ${season?.boardExpectation ?? 'Unknown'} | Season objective: ${season?.seasonObjective ?? 'Unknown'}
+
+CURRENT FORM (latest checkpoint — ${latestCp?.gamesPlayed ?? 0} games):
+- Position: ${ts?.leaguePosition ?? '?'}th | Points: ${ts?.points ?? '?'} | ${ts?.wins ?? '?'}W ${ts?.draws ?? '?'}D ${ts?.losses ?? '?'}L
+- Goals: ${ts?.goalsFor ?? '?'} scored / ${ts?.goalsAgainst ?? '?'} conceded | GD: ${ts?.goalDiff ?? '?'}
+${ts?.xg != null ? `- xG: ${Number(ts.xg).toFixed(1)} | xGA: ${Number(ts.xga ?? 0).toFixed(1)} | xG diff: ${(Number(ts.xg) - Number(ts.xga ?? 0)).toFixed(1)} ${Number(ts.xg) > Number(ts.xga ?? 0) ? '(creating more than conceding — good)' : '(conceding more than creating — concern)'}` : ''}
+${ts?.possession != null ? `- Possession: ${Number(ts.possession).toFixed(0)}% | Pass completion: ${ts.passCompletion ? Number(ts.passCompletion).toFixed(0) + '%' : '?'}` : ''}
+${ts?.cleanSheets != null ? `- Clean sheets: ${ts.cleanSheets}` : ''}
+${ts?.setPieceGoalsFor != null ? `- Set piece goals: ${ts.setPieceGoalsFor} (${ts.goalsFor && ts.goalsFor > 0 ? Math.round(ts.setPieceGoalsFor / ts.goalsFor * 100) : '?'}% of all goals) — ${ts.setPieceGoalsFor < 5 ? 'LOW — should be 15-25% with good routines' : ts.setPieceGoalsFor < 10 ? 'decent, room to improve' : 'excellent set piece output'}` : ''}
+${fin?.transferBudget != null ? `- Transfer budget: £${(Number(fin.transferBudget) / 1000000).toFixed(1)}m` : ''}
+${fin?.remainingWageBudget != null ? `- Remaining wage budget: £${(Number(fin.remainingWageBudget) / 1000).toFixed(0)}k/wk` : ''}
 ${topScorers ? `- Top scorers: ${topScorers}` : ''}
-${fin?.transferBudget != null ? `- Transfer budget: £${(fin.transferBudget / 1000000).toFixed(1)}m` : ''}
-${fin?.remainingWageBudget != null ? `- Wage budget remaining: £${(fin.remainingWageBudget / 1000).toFixed(0)}k/wk` : ''}
-${cpSummaries ? `- Season checkpoints: ${cpSummaries}` : ''}
-${youthNames ? `- Youth/loan players being tracked: ${youthNames}` : ''}
-- Games played so far this season: ${latestCp?.gamesPlayed ?? 0}` : `No save loaded yet — help the user set up their first save.`}
+${topRated ? `- Highest rated: ${topRated}` : ''}
+${contractAlerts ? `- ⚠️ Contracts expiring soon: ${contractAlerts}` : ''}
+${youthNames ? `- Youth/loan tracked: ${youthNames}` : ''}
+${positionTrend ? `- Position trend: ${positionTrend}` : ''}
+
+SEASON TREND (all checkpoints):
+${cpTrend || 'No checkpoint data yet'}` : `No save loaded yet — help the user set up their first save.`}
 
 ${fm26Knowledge}
 

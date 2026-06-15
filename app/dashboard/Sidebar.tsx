@@ -5,12 +5,13 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Database, Camera,
   BarChart2, Users, Star, ClipboardList, BookOpen, LogOut,
-  Layers, GraduationCap, ArrowLeftRight, Target, Zap, MessageSquare,
+  Layers, GraduationCap, ArrowLeftRight, Target, Zap, MessageSquare, TrendingUp,
 } from 'lucide-react'
 
 const NAV = [
   { href: '/dashboard/assistant', icon: MessageSquare, label: 'Assistant', highlight: true },
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', exact: true },
+  { href: '/dashboard/analytics', icon: TrendingUp, label: 'Analytics' },
   { href: '/dashboard/saves', icon: Database, label: 'Saves' },
   { href: '/dashboard/checkpoints', icon: Camera, label: 'Checkpoints' },
   { href: '/dashboard/compare', icon: BarChart2, label: 'Compare' },

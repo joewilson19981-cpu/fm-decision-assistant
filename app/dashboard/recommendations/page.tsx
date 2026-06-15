@@ -2,12 +2,18 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 
-const TYPE_COLORS: Record<string, string> = {
-  tactical: 'bg-purple-100 text-purple-700',
-  recruitment: 'bg-blue-100 text-blue-700',
-  financial: 'bg-green-100 text-green-700',
-  development: 'bg-amber-100 text-amber-700',
-  general: ' text-zinc-400',
+const TYPE_COLORS: Record<string, React.CSSProperties> = {
+  tactical:    { background: 'rgba(167,139,250,0.1)', color: '#a78bfa', border: '1px solid rgba(167,139,250,0.2)' },
+  recruitment: { background: 'rgba(96,165,250,0.1)',  color: '#60a5fa', border: '1px solid rgba(96,165,250,0.2)' },
+  financial:   { background: 'rgba(52,211,153,0.1)',  color: '#34d399', border: '1px solid rgba(52,211,153,0.2)' },
+  development: { background: 'rgba(251,191,36,0.1)',  color: '#fbbf24', border: '1px solid rgba(251,191,36,0.2)' },
+  general:     { background: 'rgba(255,255,255,0.05)', color: '#666666', border: '1px solid rgba(255,255,255,0.08)' },
+}
+
+const STATUS_STYLES: Record<string, React.CSSProperties> = {
+  actioned:  { background: 'rgba(52,211,153,0.1)',  color: '#34d399', border: '1px solid rgba(52,211,153,0.2)' },
+  dismissed: { background: 'rgba(255,255,255,0.04)', color: '#444444', border: '1px solid rgba(255,255,255,0.06)' },
+  pending:   { background: 'rgba(255,255,255,0.06)', color: '#aaaaaa', border: '1px solid rgba(255,255,255,0.08)' },
 }
 
 export default async function RecommendationsPage() {
@@ -22,40 +28,50 @@ export default async function RecommendationsPage() {
   })
 
   return (
-    <div>
+    <div className="px-6 py-6 max-w-4xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white">Recommendations</h1>
-        <p className="text-zinc-500 text-sm mt-1">Decision support across your saves</p>
+        <h1 className="text-xl font-bold text-white">Recommendations</h1>
+        <p className="text-[13px] mt-0.5" style={{ color: '#555' }}>
+          AI-generated insights from your checkpoint data
+        </p>
       </div>
 
       {recommendations.length === 0 ? (
-        <div className="rounded-xl card-panel border border-white/[0.06] p-10 text-center">
-          <div className="text-4xl mb-3">⭐</div>
-          <h2 className="text-lg font-semibold text-white mb-2">No recommendations yet</h2>
-          <p className="text-sm text-zinc-500 max-w-sm mx-auto">
-            Recommendations will appear here as you enter data into your checkpoints. In a future phase, these will be generated automatically based on your stats.
+        <div className="rounded-xl p-12 text-center"
+          style={{ background: '#101010', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <p className="text-4xl mb-3">⭐</p>
+          <h2 className="text-base font-semibold text-white mb-1">No recommendations yet</h2>
+          <p className="text-sm max-w-sm mx-auto mb-4" style={{ color: '#555' }}>
+            Ask the Assistant to analyse your save — it will generate recommendations based on your stats, xG, set piece goals, and squad data.
           </p>
+          <Link href="/dashboard/assistant"
+            className="inline-block text-sm font-medium px-4 py-2 rounded-lg text-black bg-white hover:bg-zinc-200 transition-colors">
+            Open Assistant
+          </Link>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {recommendations.map(rec => (
-            <div key={rec.id} className="rounded-xl card-panel border border-white/[0.06] p-5">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${TYPE_COLORS[rec.type] ?? TYPE_COLORS.general}`}>
+            <div key={rec.id} className="rounded-xl px-5 py-4"
+              style={{ background: '#101010', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                    <span className="text-[11px] font-medium px-2 py-0.5 rounded-md"
+                      style={TYPE_COLORS[rec.type] ?? TYPE_COLORS.general}>
                       {rec.type}
                     </span>
-                    <span className="text-xs text-zinc-600">{rec.save.name}{rec.season && ` · ${rec.season.seasonLabel}`}</span>
+                    <span className="text-[11px]" style={{ color: '#444' }}>
+                      {rec.save.name}{rec.season ? ` · ${rec.season.seasonLabel}` : ''}
+                    </span>
                   </div>
-                  <h3 className="font-semibold text-white">{rec.title}</h3>
-                  {rec.summary && <p className="text-sm text-zinc-400 mt-1">{rec.summary}</p>}
+                  <h3 className="text-[14px] font-semibold text-white">{rec.title}</h3>
+                  {rec.summary && (
+                    <p className="text-[13px] mt-1" style={{ color: '#888' }}>{rec.summary}</p>
+                  )}
                 </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full ml-4 ${
-                  rec.status === 'actioned' ? 'bg-green-100 text-green-700' :
-                  rec.status === 'dismissed' ? ' text-zinc-600' :
-                  'bg-blue-50 text-white'
-                }`}>
+                <span className="text-[11px] font-medium px-2.5 py-1 rounded-lg flex-shrink-0"
+                  style={STATUS_STYLES[rec.status] ?? STATUS_STYLES.pending}>
                   {rec.status}
                 </span>
               </div>
