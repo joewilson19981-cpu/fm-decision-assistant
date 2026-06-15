@@ -250,19 +250,36 @@ export default function AssistantPage() {
     ta.style.height = Math.min(ta.scrollHeight, 160) + 'px'
   }, [input])
 
+  // Resize image to max 1024px wide — keeps text readable, cuts payload ~80%
+  const resizeImage = useCallback((file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')!
+      const img = new window.Image()
+      const url = URL.createObjectURL(file)
+      img.onload = () => {
+        const MAX = 1024
+        const ratio = Math.min(1, MAX / img.width)
+        canvas.width = Math.round(img.width * ratio)
+        canvas.height = Math.round(img.height * ratio)
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        URL.revokeObjectURL(url)
+        resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1])
+      }
+      img.src = url
+    })
+  }, [])
+
   const addFiles = useCallback((files: FileList | File[]) => {
     Array.from(files).filter(f => f.type.startsWith('image/')).forEach(file => {
       const preview = URL.createObjectURL(file)
       const img: AttachedImage = { id: Math.random().toString(36).slice(2), file, preview }
-      const reader = new FileReader()
-      reader.onload = () => {
-        const base64 = (reader.result as string).split(',')[1]
+      resizeImage(file).then(base64 => {
         setImages(prev => prev.map(i => i.id === img.id ? { ...i, base64 } : i))
-      }
-      reader.readAsDataURL(file)
+      })
       setImages(prev => [...prev, img])
     })
-  }, [])
+  }, [resizeImage])
 
   async function send() {
     const text = input.trim()
@@ -290,14 +307,11 @@ export default function AssistantPage() {
     setImages([])
     setLoading(true)
 
+    // Wait for all resizes to complete (they run in background when files are added)
     const imagePayloads = await Promise.all(
       sentImages.map(async img => {
-        const base64 = img.base64 || await new Promise<string>((resolve) => {
-          const reader = new FileReader()
-          reader.onload = () => resolve((reader.result as string).split(',')[1])
-          reader.readAsDataURL(img.file)
-        })
-        return { base64, mimeType: img.file.type || 'image/png', filename: img.file.name }
+        const base64 = img.base64 || await resizeImage(img.file)
+        return { base64, mimeType: 'image/jpeg', filename: img.file.name }
       })
     )
 
@@ -308,13 +322,28 @@ export default function AssistantPage() {
     if (text) history.push({ role: 'user', content: text })
 
     try {
+      // Step 1: Extract data from images (fast dedicated endpoint)
+      let extractedData: any = null
+      if (imagePayloads.length > 0) {
+        const extractRes = await fetch('/api/ai/extract', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ images: imagePayloads }),
+        })
+        if (extractRes.ok) {
+          extractedData = await extractRes.json()
+        }
+      }
+
+      // Step 2: Chat — send extracted JSON (not images) to keep payload tiny
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: history,
           saveId,
-          images: imagePayloads.length > 0 ? imagePayloads : undefined,
+          extractedData: extractedData || undefined,
+          imageCount: imagePayloads.length || undefined,
           gamesPlayed: gamesPlayed ?? undefined,
           intent: !saveId ? 'setup' : hasImages && gamesPlayed ? 'checkpoint' : 'chat',
         }),

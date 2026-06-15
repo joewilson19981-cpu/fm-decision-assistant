@@ -423,7 +423,8 @@ export async function POST(req: NextRequest) {
     const {
       messages,           // [{ role, content }] — full history
       saveId,             // current save (null if setup)
-      images,             // [{ base64, mimeType, filename }]
+      extractedData,      // pre-extracted JSON from /api/ai/extract (replaces images)
+      imageCount,         // how many images were sent (for context message)
       gamesPlayed,        // number, if this is a checkpoint update
       intent,             // 'setup' | 'checkpoint' | 'chat' | 'setup_complete'
       setupContext,       // { clubName, seasonObjective, boardExpectation } for final setup step
@@ -432,41 +433,24 @@ export async function POST(req: NextRequest) {
     let saveContextData: any = null
     if (saveId) saveContextData = await loadSaveContext(saveId, user.id)
 
-    // ── Process images if any ─────────────────────────────────────────────────
+    // ── Process pre-extracted data ────────────────────────────────────────────
     let extractionResult: any = null
     let dbSaveResult: any = null
     let newSave: any = null
-    let imageTypes: string[] = []
+    const imageTypes: string[] = []
 
-    if (images?.length > 0) {
-      // Single Claude call for all images — fast, no rate limits
-      const imagesToProcess = images.slice(0, 20)
+    if (extractedData) {
+      extractionResult = extractedData
 
-      let extractionValue: any = null
-      try {
-        extractionValue = await analyzeAllImages(
-          imagesToProcess.map((img: any) => ({ base64: img.base64, mimeType: img.mimeType || 'image/png' }))
-        )
-      } catch (e) {
-        console.error('Vision extraction failed:', e)
-      }
-
-      const successful = extractionValue ? [extractionValue] : []
-      imageTypes = extractionValue ? ['squad'] : ['error']
-
-      if (successful.length > 0) {
-        extractionResult = mergeExtractions(successful)
-
-        if (intent === 'setup' || !saveId) {
-          // Creating a new save
-          if (setupContext?.clubName || extractionResult.clubName) {
-            const { save, playerCount } = await createSaveFromExtracted(extractionResult, user.id, setupContext || {})
-            newSave = { id: save.id, name: save.name, playerCount }
-          }
-        } else if (saveId && gamesPlayed != null) {
-          // Checkpoint update
-          dbSaveResult = await saveToCheckpoint(saveId, extractionResult, gamesPlayed, user.id)
+      if (intent === 'setup' || !saveId) {
+        // Creating a new save
+        if (setupContext?.clubName || extractionResult.clubName) {
+          const { save, playerCount } = await createSaveFromExtracted(extractionResult, user.id, setupContext || {})
+          newSave = { id: save.id, name: save.name, playerCount }
         }
+      } else if (saveId && gamesPlayed != null) {
+        // Checkpoint update
+        dbSaveResult = await saveToCheckpoint(saveId, extractionResult, gamesPlayed, user.id)
       }
     }
 
@@ -509,7 +493,7 @@ export async function POST(req: NextRequest) {
       const isYouthCheckpoint = gamesPlayed === 23 || gamesPlayed === 46
       if (isYouthCheckpoint && !extractionResult.playerStats?.length) missing.push('youth_squad')
 
-      imageContextMessage = `[EXTRACTED FROM ${images.length} SCREENSHOT(S)${images.length > 20 ? ` — only first 20 processed` : ''}]\nFound: ${found.join(' | ')}\nMissing: ${missing.join(', ') || 'nothing'}\nSaved to DB: ${dbSaveResult?.saved?.join(', ') || (newSave ? `new save created (${newSave.playerCount} players)` : 'not saved')}\nYouth updated: ${dbSaveResult?.youthUpdated?.join(', ') || 'none'}\nNewSaveId: ${newSave?.id || ''}\nGamesPlayed: ${gamesPlayed || 'unknown'}\nIsYouthCheckpoint: ${isYouthCheckpoint}`
+      imageContextMessage = `[EXTRACTED FROM ${imageCount || 0} SCREENSHOT(S)${(imageCount || 0) > 20 ? ` — only first 20 processed` : ''}]\nFound: ${found.join(' | ')}\nMissing: ${missing.join(', ') || 'nothing'}\nSaved to DB: ${dbSaveResult?.saved?.join(', ') || (newSave ? `new save created (${newSave.playerCount} players)` : 'not saved')}\nYouth updated: ${dbSaveResult?.youthUpdated?.join(', ') || 'none'}\nNewSaveId: ${newSave?.id || ''}\nGamesPlayed: ${gamesPlayed || 'unknown'}\nIsYouthCheckpoint: ${isYouthCheckpoint}`
     }
 
     // ── Build checklist ───────────────────────────────────────────────────────
