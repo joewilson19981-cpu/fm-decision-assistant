@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
 import { buildFM26KnowledgeBlock, getChecklistForGames, evaluateChecklist, isCheckpointComplete } from '@/lib/fm26-knowledge'
 
+// Allow up to 120s on Vercel Pro (prevents timeout when processing many images)
+export const maxDuration = 120
+
 // ── Vision extraction (same model as analyze-screenshot) ─────────────────────
 
 const EXTRACT_PROMPT = `You are an expert at reading Football Manager screenshots.
@@ -431,9 +434,31 @@ export async function POST(req: NextRequest) {
     let imageTypes: string[] = []
 
     if (images?.length > 0) {
-      const extractions = await Promise.allSettled(
-        images.map((img: any) => analyzeImage(img.base64, img.mimeType || 'image/png'))
-      )
+      // Cap at 18 — multiple squad pages are a valid use case
+      const imageWarning = images.length > 18
+        ? `[SYSTEM NOTE: User sent ${images.length} screenshots. Only the first 18 will be processed. If they're sending squad pages, that's fine — just note we capped at 18.]`
+        : null
+
+      // Process in batches of 4 to avoid Groq rate limits (instead of all-at-once)
+      const imagesToProcess = images.slice(0, 18)
+      async function processBatched(imgs: any[], batchSize = 4): Promise<PromiseSettledResult<any>[]> {
+        const results: PromiseSettledResult<any>[] = []
+        for (let i = 0; i < imgs.length; i += batchSize) {
+          const batch = imgs.slice(i, i + batchSize)
+          const batchResults = await Promise.allSettled(
+            batch.map((img: any) => analyzeImage(img.base64, img.mimeType || 'image/png'))
+          )
+          results.push(...batchResults)
+          // Small pause between batches to ease rate limit pressure
+          if (i + batchSize < imgs.length) {
+            await new Promise(r => setTimeout(r, 500))
+          }
+        }
+        return results
+      }
+
+      const extractions = await processBatched(imagesToProcess)
+      if (imageWarning) extractions.unshift({ status: 'fulfilled', value: { screenshotType: 'other', _warning: imageWarning } } as any)
       const successful = extractions
         .filter(r => r.status === 'fulfilled')
         .map(r => (r as any).value)
@@ -497,7 +522,7 @@ export async function POST(req: NextRequest) {
       const isYouthCheckpoint = gamesPlayed === 23 || gamesPlayed === 46
       if (isYouthCheckpoint && !extractionResult.playerStats?.length) missing.push('youth_squad')
 
-      imageContextMessage = `[EXTRACTED FROM ${images.length} SCREENSHOT(S)]\nFound: ${found.join(' | ')}\nMissing: ${missing.join(', ') || 'nothing'}\nSaved to DB: ${dbSaveResult?.saved?.join(', ') || (newSave ? `new save created (${newSave.playerCount} players)` : 'not saved')}\nYouth updated: ${dbSaveResult?.youthUpdated?.join(', ') || 'none'}\nNewSaveId: ${newSave?.id || ''}\nGamesPlayed: ${gamesPlayed || 'unknown'}\nIsYouthCheckpoint: ${isYouthCheckpoint}`
+      imageContextMessage = `[EXTRACTED FROM ${images.length} SCREENSHOT(S)${images.length > 18 ? ` — only first 18 processed` : ''}]\nFound: ${found.join(' | ')}\nMissing: ${missing.join(', ') || 'nothing'}\nSaved to DB: ${dbSaveResult?.saved?.join(', ') || (newSave ? `new save created (${newSave.playerCount} players)` : 'not saved')}\nYouth updated: ${dbSaveResult?.youthUpdated?.join(', ') || 'none'}\nNewSaveId: ${newSave?.id || ''}\nGamesPlayed: ${gamesPlayed || 'unknown'}\nIsYouthCheckpoint: ${isYouthCheckpoint}`
     }
 
     // ── Build checklist ───────────────────────────────────────────────────────
