@@ -2,16 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
 import { buildFM26KnowledgeBlock, getChecklistForGames, evaluateChecklist, isCheckpointComplete } from '@/lib/fm26-knowledge'
+import Anthropic from '@anthropic-ai/sdk'
 
-// Allow up to 120s on Vercel Pro (prevents timeout when processing many images)
+// Allow up to 120s on Vercel Pro
 export const maxDuration = 120
 
-// ── Vision extraction (same model as analyze-screenshot) ─────────────────────
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+// ── Vision extraction — single Claude call for ALL images ────────────────────
 
 const EXTRACT_PROMPT = `You are an expert at reading Football Manager screenshots.
-Extract ALL visible data and return ONLY valid JSON:
+You will receive one or more FM screenshots. Extract ALL visible data from ALL images combined and return ONLY a single valid JSON object:
 {
-  "screenshotType": "league_table | team_stats | player_stats | tactic | finances | medical | squad | youth | other",
   "gameDate": "YYYY-MM-DD or null",
   "transferWindow": "open | closed | null",
   "leagueName": "string or null",
@@ -23,32 +25,35 @@ Extract ALL visible data and return ONLY valid JSON:
   "finances": { "balance": null, "profitLoss": null, "transferBudget": null, "wageBudget": null, "wageSpend": null, "remainingWageBudget": null },
   "medical": { "currentInjuries": null, "totalInjuriesThisSeason": null, "overallSquadCondition": null, "notes": null }
 }
-Convert financials to raw numbers (£2.5M → 2500000). Dates to YYYY-MM-DD.
-For league tables, set isYourTeam: true for the highlighted/bold team row.`
+Rules:
+- Merge players across all squad screenshots (deduplicate by name)
+- Convert financials to raw numbers (£2.5M → 2500000). Dates to YYYY-MM-DD
+- For league tables, set isYourTeam: true for the highlighted/bold team row
+- Return ONLY the JSON, no explanation`
 
-async function analyzeImage(base64: string, mimeType: string): Promise<any> {
-  let response: Response | null = null
-  for (let attempt = 0; attempt < 3; attempt++) {
-    response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${process.env.GROQ_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-        messages: [{ role: 'user', content: [
-          { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64}` } },
-          { type: 'text', text: EXTRACT_PROMPT },
-        ]}],
-        max_tokens: 4096, temperature: 0.1,
-      }),
-    })
-    if (response.status !== 429) break
-    const e = await response.json().catch(() => ({}))
-    const m = (e?.error?.message ?? '').match(/try again in ([\d.]+)s/)
-    await new Promise(r => setTimeout(r, m ? Math.ceil(parseFloat(m[1]) * 1000) + 500 : 8000))
-  }
-  if (!response?.ok) throw new Error(`Vision API error ${response?.status}`)
-  const result = await response.json()
-  const text = result.choices[0]?.message?.content ?? ''
+async function analyzeAllImages(images: { base64: string; mimeType: string }[]): Promise<any> {
+  const imageBlocks: Anthropic.ImageBlockParam[] = images.map(img => ({
+    type: 'image',
+    source: {
+      type: 'base64',
+      media_type: (img.mimeType || 'image/png') as any,
+      data: img.base64,
+    },
+  }))
+
+  const response = await anthropic.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 8192,
+    messages: [{
+      role: 'user',
+      content: [
+        ...imageBlocks,
+        { type: 'text', text: EXTRACT_PROMPT },
+      ],
+    }],
+  })
+
+  const text = response.content[0]?.type === 'text' ? response.content[0].text : ''
   return JSON.parse(text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim())
 }
 
@@ -434,38 +439,20 @@ export async function POST(req: NextRequest) {
     let imageTypes: string[] = []
 
     if (images?.length > 0) {
-      // Cap at 18 — multiple squad pages are a valid use case
-      const imageWarning = images.length > 18
-        ? `[SYSTEM NOTE: User sent ${images.length} screenshots. Only the first 18 will be processed. If they're sending squad pages, that's fine — just note we capped at 18.]`
-        : null
+      // Single Claude call for all images — fast, no rate limits
+      const imagesToProcess = images.slice(0, 20)
 
-      // Process in batches of 4 to avoid Groq rate limits (instead of all-at-once)
-      const imagesToProcess = images.slice(0, 18)
-      async function processBatched(imgs: any[], batchSize = 4): Promise<PromiseSettledResult<any>[]> {
-        const results: PromiseSettledResult<any>[] = []
-        for (let i = 0; i < imgs.length; i += batchSize) {
-          const batch = imgs.slice(i, i + batchSize)
-          const batchResults = await Promise.allSettled(
-            batch.map((img: any) => analyzeImage(img.base64, img.mimeType || 'image/png'))
-          )
-          results.push(...batchResults)
-          // Small pause between batches to ease rate limit pressure
-          if (i + batchSize < imgs.length) {
-            await new Promise(r => setTimeout(r, 500))
-          }
-        }
-        return results
+      let extractionValue: any = null
+      try {
+        extractionValue = await analyzeAllImages(
+          imagesToProcess.map((img: any) => ({ base64: img.base64, mimeType: img.mimeType || 'image/png' }))
+        )
+      } catch (e) {
+        console.error('Vision extraction failed:', e)
       }
 
-      const extractions = await processBatched(imagesToProcess)
-      if (imageWarning) extractions.unshift({ status: 'fulfilled', value: { screenshotType: 'other', _warning: imageWarning } } as any)
-      const successful = extractions
-        .filter(r => r.status === 'fulfilled')
-        .map(r => (r as any).value)
-
-      imageTypes = extractions.map((r, i) =>
-        r.status === 'fulfilled' ? (r as any).value?.screenshotType || 'unknown' : 'error'
-      )
+      const successful = extractionValue ? [extractionValue] : []
+      imageTypes = extractionValue ? ['squad'] : ['error']
 
       if (successful.length > 0) {
         extractionResult = mergeExtractions(successful)
@@ -522,7 +509,7 @@ export async function POST(req: NextRequest) {
       const isYouthCheckpoint = gamesPlayed === 23 || gamesPlayed === 46
       if (isYouthCheckpoint && !extractionResult.playerStats?.length) missing.push('youth_squad')
 
-      imageContextMessage = `[EXTRACTED FROM ${images.length} SCREENSHOT(S)${images.length > 18 ? ` — only first 18 processed` : ''}]\nFound: ${found.join(' | ')}\nMissing: ${missing.join(', ') || 'nothing'}\nSaved to DB: ${dbSaveResult?.saved?.join(', ') || (newSave ? `new save created (${newSave.playerCount} players)` : 'not saved')}\nYouth updated: ${dbSaveResult?.youthUpdated?.join(', ') || 'none'}\nNewSaveId: ${newSave?.id || ''}\nGamesPlayed: ${gamesPlayed || 'unknown'}\nIsYouthCheckpoint: ${isYouthCheckpoint}`
+      imageContextMessage = `[EXTRACTED FROM ${images.length} SCREENSHOT(S)${images.length > 20 ? ` — only first 20 processed` : ''}]\nFound: ${found.join(' | ')}\nMissing: ${missing.join(', ') || 'nothing'}\nSaved to DB: ${dbSaveResult?.saved?.join(', ') || (newSave ? `new save created (${newSave.playerCount} players)` : 'not saved')}\nYouth updated: ${dbSaveResult?.youthUpdated?.join(', ') || 'none'}\nNewSaveId: ${newSave?.id || ''}\nGamesPlayed: ${gamesPlayed || 'unknown'}\nIsYouthCheckpoint: ${isYouthCheckpoint}`
     }
 
     // ── Build checklist ───────────────────────────────────────────────────────
