@@ -286,7 +286,7 @@ export default function AssistantPage() {
     ta.style.height = Math.min(ta.scrollHeight, 160) + 'px'
   }, [input])
 
-  // Resize image to max 1024px on longest side — keeps FM text readable, cuts payload ~80%
+  // Resize image to max 800px on longest side — smaller than before to avoid browser freeze
   const resizeImage = useCallback((file: File): Promise<string> => {
     return new Promise((resolve) => {
       const canvas = document.createElement('canvas')
@@ -294,27 +294,34 @@ export default function AssistantPage() {
       const img = new window.Image()
       const url = URL.createObjectURL(file)
       img.onload = () => {
-        const MAX = 1024
+        const MAX = 800
         const ratio = Math.min(1, MAX / Math.max(img.width, img.height))
         canvas.width = Math.round(img.width * ratio)
         canvas.height = Math.round(img.height * ratio)
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
         URL.revokeObjectURL(url)
-        resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1])
+        resolve(canvas.toDataURL('image/jpeg', 0.80).split(',')[1])
       }
       img.src = url
     })
   }, [])
 
   const addFiles = useCallback((files: FileList | File[]) => {
-    Array.from(files).filter(f => f.type.startsWith('image/')).forEach(file => {
-      const preview = URL.createObjectURL(file)
-      const img: AttachedImage = { id: Math.random().toString(36).slice(2), file, preview }
-      resizeImage(file).then(base64 => {
+    const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'))
+    // Add all previews immediately so UI shows them
+    const newImgs: AttachedImage[] = imageFiles.map(file => ({
+      id: Math.random().toString(36).slice(2),
+      file,
+      preview: URL.createObjectURL(file),
+    }))
+    setImages(prev => [...prev, ...newImgs])
+    // Resize sequentially (not all at once) to avoid freezing the browser
+    ;(async () => {
+      for (const img of newImgs) {
+        const base64 = await resizeImage(img.file)
         setImages(prev => prev.map(i => i.id === img.id ? { ...i, base64 } : i))
-      })
-      setImages(prev => [...prev, img])
-    })
+      }
+    })()
   }, [resizeImage])
 
   async function send() {
