@@ -45,7 +45,17 @@ export async function POST(req: NextRequest) {
     })
 
     const text = response.content[0]?.type === 'text' ? response.content[0].text : ''
-    const extracted = JSON.parse(text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim())
+
+    // Robust JSON extraction — handle cases where Claude adds commentary
+    let jsonStr = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+    // If there's text before the JSON object, find the first {
+    const firstBrace = jsonStr.indexOf('{')
+    if (firstBrace > 0) jsonStr = jsonStr.slice(firstBrace)
+    // If there's text after the JSON object, find the last }
+    const lastBrace = jsonStr.lastIndexOf('}')
+    if (lastBrace >= 0 && lastBrace < jsonStr.length - 1) jsonStr = jsonStr.slice(0, lastBrace + 1)
+
+    const extracted = JSON.parse(jsonStr)
     return NextResponse.json(extracted)
   } catch (err: any) {
     console.error('Extract error:', err)

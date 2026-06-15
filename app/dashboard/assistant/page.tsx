@@ -380,8 +380,20 @@ export default function AssistantPage() {
               .catch(() => null)
           )
         )
+        // If every single batch failed, surface the error — don't silently proceed
+        const successfulResults = results.filter(Boolean)
+        if (successfulResults.length === 0) {
+          setMessages(prev => prev.filter(m => m.id !== 'loading').concat({
+            id: Date.now().toString() + '_err',
+            role: 'assistant',
+            content: `Screenshot extraction failed — the AI couldn't read any of the ${imagePayloads.length} images. This is usually a temporary API issue. Please try again in a moment.`,
+          }))
+          setLoading(false)
+          return
+        }
+
         // Merge all batch results into one combined object
-        extractedData = results.filter(Boolean).reduce((acc: any, r: any) => {
+        extractedData = successfulResults.reduce((acc: any, r: any) => {
           if (!acc) return r
           const merged: any = {}
           const allKeys = new Set([...Object.keys(acc), ...Object.keys(r)])
@@ -432,10 +444,15 @@ export default function AssistantPage() {
         setSaves(newSaves || [])
       }
 
+      // If save creation failed, prepend a visible error note
+      const saveErrorNote = data.saveCreationError
+        ? `⚠️ Save could not be created: ${data.saveCreationError}\n\n`
+        : ''
+
       const aiMsg: Message = {
         id: Date.now().toString() + '_ai',
         role: 'assistant',
-        content: data.error ? `Something went wrong: ${data.error}` : data.message,
+        content: data.error ? `Something went wrong: ${data.error}` : saveErrorNote + data.message,
         savedItems: data.saved?.length > 0 ? data.saved : undefined,
         youthUpdated: data.youthUpdated?.length > 0 ? data.youthUpdated : undefined,
         checklist: data.checklist ?? undefined,

@@ -437,16 +437,27 @@ export async function POST(req: NextRequest) {
     let extractionResult: any = null
     let dbSaveResult: any = null
     let newSave: any = null
+    let saveCreationError: string | null = null
     const imageTypes: string[] = []
 
     if (extractedData) {
       extractionResult = extractedData
 
+      // Ensure the user row exists in Prisma (Supabase auth.users is separate from public.users)
+      await prisma.user.upsert({
+        where: { id: user.id },
+        create: { id: user.id, email: user.email || 'unknown@unknown.com' },
+        update: {},
+      })
+
       if (intent === 'setup' || !saveId) {
-        // Always create the save — createSaveFromExtracted handles missing clubName (defaults to 'Unknown Club')
-        // The frontend never sends setupContext so we cannot gate on it
-        const { save, playerCount } = await createSaveFromExtracted(extractionResult, user.id, setupContext || {})
-        newSave = { id: save.id, name: save.name, playerCount }
+        try {
+          const { save, playerCount } = await createSaveFromExtracted(extractionResult, user.id, setupContext || {})
+          newSave = { id: save.id, name: save.name, playerCount }
+        } catch (saveErr: any) {
+          saveCreationError = saveErr.message || 'Unknown error creating save'
+          console.error('Save creation failed:', saveErr)
+        }
       } else if (saveId && gamesPlayed != null) {
         // Checkpoint update
         dbSaveResult = await saveToCheckpoint(saveId, extractionResult, gamesPlayed, user.id)
@@ -492,7 +503,7 @@ export async function POST(req: NextRequest) {
       const isYouthCheckpoint = gamesPlayed === 23 || gamesPlayed === 46
       if (isYouthCheckpoint && !extractionResult.playerStats?.length) missing.push('youth_squad')
 
-      imageContextMessage = `[EXTRACTED FROM ${imageCount || 0} SCREENSHOT(S)${(imageCount || 0) > 20 ? ` — only first 20 processed` : ''}]\nFound: ${found.join(' | ')}\nMissing: ${missing.join(', ') || 'nothing'}\nSaved to DB: ${dbSaveResult?.saved?.join(', ') || (newSave ? `new save created (${newSave.playerCount} players)` : 'not saved')}\nYouth updated: ${dbSaveResult?.youthUpdated?.join(', ') || 'none'}\nNewSaveId: ${newSave?.id || ''}\nGamesPlayed: ${gamesPlayed || 'unknown'}\nIsYouthCheckpoint: ${isYouthCheckpoint}`
+      imageContextMessage = `[EXTRACTED FROM ${imageCount || 0} SCREENSHOT(S)${(imageCount || 0) > 20 ? ` — only first 20 processed` : ''}]\nFound: ${found.join(' | ')}\nMissing: ${missing.join(', ') || 'nothing'}\nSaved to DB: ${dbSaveResult?.saved?.join(', ') || (newSave ? `new save created (${newSave.playerCount} players)` : saveCreationError ? `FAILED: ${saveCreationError}` : 'not saved')}\nYouth updated: ${dbSaveResult?.youthUpdated?.join(', ') || 'none'}\nNewSaveId: ${newSave?.id || ''}\nGamesPlayed: ${gamesPlayed || 'unknown'}\nIsYouthCheckpoint: ${isYouthCheckpoint}`
     }
 
     // ── Build checklist ───────────────────────────────────────────────────────
@@ -565,6 +576,7 @@ export async function POST(req: NextRequest) {
       youthUpdated: dbSaveResult?.youthUpdated || [],
       imageTypes,
       checklist: checklistData,
+      saveCreationError: saveCreationError || null,
     })
 
   } catch (err: any) {
