@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Sidebar from './Sidebar'
+import DashboardShell from './DashboardShell'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -10,9 +11,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: '#080808' }}>
       <Sidebar email={user.email ?? ''} />
-      <main className="ml-60 flex-1 min-h-screen p-6">
-        {children}
-      </main>
+      {/* ml-56 matches the sidebar width */}
+      <div className="ml-56 flex-1 flex relative">
+        <DashboardShell>
+          {children}
+        </DashboardShell>
+      </div>
     </div>
   )
 }
